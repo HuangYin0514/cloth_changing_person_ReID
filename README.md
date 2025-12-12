@@ -1,1 +1,1 @@
-# Visible_Infrared_Person_ReID
+# cloth_changing_person_ReID
