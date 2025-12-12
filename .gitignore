@@ -1,0 +1,46 @@
+# System ----------------------------------------------------------------
+# IDEA
+*.iml
+.idea/
+*.ipr
+*.iws
+
+# OSX
+.DS_Store
+
+# Dir -----------------------------------------------------------------
+# Common
+*.ipynb_checkpoints/
+*__pycache__/
+
+# Project
+*_dataset_processing/
+*backup/
+*results/
+*running/
+
+# Log
+*wandb/
+
+# Other
+*_测试/
+*_常用模块/
+*_常用脚本/
+*_论文/
+
+# File ----------------------------------------------------------------
+*.pyc
+*.txt
+*.pkl
+*.tar
+*.jpg
+*.pdf
+*.npy
+*.gif
+*.mp4
+*.mat
+*.json
+*.pth
+*.log
+*.png
+
