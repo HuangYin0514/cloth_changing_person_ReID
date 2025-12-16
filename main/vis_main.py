@@ -7,7 +7,7 @@ import torch.utils.data as data
 import util
 from data import Data_Loder, IdentitySampler
 from model import ReIDNet
-from visualization import visualization
+from main.core.visualization import visualization
 
 warnings.filterwarnings("ignore")
 
