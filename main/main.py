@@ -1,5 +1,6 @@
 import argparse
 import os
+import time
 import warnings
 
 import numpy as np
@@ -7,12 +8,12 @@ import torch
 import torch.nn.functional as F
 import torch.utils.data as data
 import util
-from criterion import Criterion
-from data import Data_Loder, IdentitySampler
-from eval_metrics import eval_regdb, eval_sysu
-from model import ReIDNet
-from optimizer import Optimizer
-from scheduler import Scheduler
+from build_criterion import Build_Criterion
+from build_optimizer import Build_Optimizer
+from build_scheduler import Build_Scheduler
+from core import train
+from data import build_dataloader
+from model import ReID_Net
 from tqdm import tqdm
 
 import wandb
@@ -32,55 +33,59 @@ def run(config):
     ######################################################################
     # Logger
     logger = util.Logger(path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "logs/"), name="logger.log")
+    logger("Config:\t" + "*" * 20)
     logger(config)
+    logger("*" * 20)
+
+    ######################################################################
+    # Device
+    DEVICE = torch.device(config.TASK.DEVICE)
+    logger("Device is:\t {}".format(DEVICE))
+
+    ######################################################################
+    # Data
+    end = time.time()
+    dataset, train_loader, query_loader, gallery_loader = build_dataloader(config)
+    logger("Data loading time:\t {:.3f}".format(time.time() - end))
+
+    ######################################################################
+    # Model
+    reid_net = ReID_Net(config, dataset.num_train_pids).to(DEVICE)
+    # logger("Model:\n {}".format(reid_net))
+
+    ######################################################################
+    # Criterion
+    criterion = Build_Criterion(config)
+    logger("Criterion:\t {}".format(criterion))
 
     # ######################################################################
-    # # Device
-    # DEVICE = torch.device(config.TASK.DEVICE)
+    # Optimizer
+    optimizer = Build_Optimizer(config, reid_net).optimizer
+    logger("Optimizer:\t {}".format(optimizer))
 
-    # ######################################################################
-    # # Data
-    # data_loder = Data_Loder(config)
+    ######################################################################
+    # Scheduler
+    scheduler = Build_Scheduler(config, optimizer).scheduler
+    logger("Scheduler:\t {}".format(scheduler))
 
-    # ######################################################################
-    # # Model
-    # net = ReIDNet(config, data_loder.N_class).to(DEVICE)
+    ######################################################################
+    # Training & Evaluation
+    logger("=====> Start Training...")
+    # 初始化最佳指标
+    best_epoch, best_mAP, best_rank1 = 0, 0, 0
+    for epoch in range(0, config.OPTIMIZER.TOTAL_TRAIN_EPOCH):
+        meter = train(config, logger, epoch, reid_net, train_loader, criterion, optimizer, scheduler)
+        logger("Time: {}; Epoch: {}; {}".format(util.time_now(), epoch, meter.get_str()))
+        # wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
 
-    # ######################################################################
-    # # Criterion
-    # criterion = Criterion(config)
-
-    # ######################################################################
-    # # Optimizer
-    # optimizer = Optimizer(config, net).optimizer
-
-    # ######################################################################
-    # # Scheduler
-    # scheduler = Scheduler(config, optimizer)
-
-    # ######################################################################
-    # # Training & Evaluation
-    # print("==> Start Training...")
-    # # 初始化最佳指标
-    # best_epoch, best_mAP, best_rank1 = 0, 0, 0
-    # for epoch in range(0, config.OPTIMIZER.TOTAL_TRAIN_EPOCH):
-    #     #########
-    #     # train
-    #     #########
-    #     scheduler.lr_scheduler.step(epoch)
-    #     # TODO
-    #     meter = None
-    #     logger("Time: {}; Epoch: {}; {}".format(util.time_now(), epoch, meter.get_str()))
-    #     wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
-
-    #     #########
-    #     # Test
-    #     #########
-    #     if epoch % config.TEST.EVAL_EPOCH == 0:
-    #         # TODO
-    #         mAP, CMC = None, None
-    #         logger("Time: {}; Test on Dataset: {}, \nmAP: {} \nRank: {}".format(util.time_now(), config.DATASET.TRAIN_DATASET, mAP, CMC))
-    #         wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
+    #     # #########
+    #     # # Test
+    #     # #########
+    #     # if epoch % config.TEST.EVAL_EPOCH == 0:
+    #     #     # TODO
+    #     #     mAP, CMC = None, None
+    #     #     logger("Time: {}; Test on Dataset: {}, \nmAP: {} \nRank: {}".format(util.time_now(), config.DATASET.TRAIN_DATASET, mAP, CMC))
+    #     #     wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
 
     # logger("=" * 50)
     # logger("Best model is: epoch: {}, rank1: {}, mAP: {}".format(best_epoch, best_rank1, best_mAP))
@@ -93,13 +98,13 @@ if __name__ == "__main__":
     util.set_seed_torch(config.TASK.SEED)
 
     # 初始化wandb
-    wandb.init(
-        entity="yinhuang-team-projects",
-        project=config.TASK.PROJECT,
-        name=config.TASK.NAME,
-        notes=config.TASK.NOTES,
-        tags=config.TASK.TAGS,
-        config=config,
-    )
+    # wandb.init(
+    #     entity="yinhuang-team-projects",
+    #     project=config.TASK.PROJECT,
+    #     name=config.TASK.NAME,
+    #     notes=config.TASK.NOTES,
+    #     tags=config.TASK.TAGS,
+    #     config=config,
+    # )
     run(config)
-    wandb.finish()
+    # wandb.finish()

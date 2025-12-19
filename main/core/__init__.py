@@ -1,2 +1,2 @@
 from .test import *
-from .train import *
+from .train import train

@@ -1,1 +1,1 @@
-from .model import ReIDNet
+from .model import ReID_Net

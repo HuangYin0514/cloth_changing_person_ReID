@@ -1,13 +1,26 @@
 import torch.optim as optim
 
 
-class Optimizer:
+class Build_Optimizer:
     def __init__(self, config, net):
         self.name = "optimizer"
-        self.load_optimizer(config, net)
+        self.build(config, net)
 
-    def load_optimizer(self, config, net):
-        ###############################################################################
+    def build(self, config, net):
+
+        self.optimizer = None
+
+        if config.OPTIMIZER.NAME == "Adam":
+            model_params_group = [
+                {
+                    "params": net.parameters(),
+                    "lr": config.OPTIMIZER.LEARNING_RATE,
+                    "weight_decay": 5e-4,
+                    "momentum": 0.9,
+                }
+            ]
+            self.optimizer = optim.Adam(model_params_group)
+
         if config.OPTIMIZER.NAME == "SGD":
 
             special_modules = [
@@ -30,13 +43,3 @@ class Optimizer:
 
             # Optimizer
             self.optimizer = optim.SGD(param_groups, weight_decay=5e-4, momentum=0.9, nesterov=True)
-        elif config.OPTIMIZER.NAME == "Adam":
-            model_params_group = [
-                {
-                    "params": net.parameters(),
-                    "lr": config.OPTIMIZER.LEARNING_RATE,
-                    "weight_decay": 5e-4,
-                    "momentum": 0.9,
-                }
-            ]
-            self.optimizer = optim.Adam(model_params_group)

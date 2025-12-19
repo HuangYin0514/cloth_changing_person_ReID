@@ -4,71 +4,24 @@ import torch
 import torch.nn as nn
 
 from .gem_pool import GeneralizedMeanPoolingP
-from .model_main_tool import Calibration, Interaction, Propagation
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
 
 
-class ReIDNet(nn.Module):
+class ReID_Net(nn.Module):
 
     def __init__(self, config, n_class):
-        super(ReIDNet, self).__init__()
+        super(ReID_Net, self).__init__()
         self.config = config
 
-        BACKBONE_FEATURES_DIM = config.MODEL.BACKBONE_FEATURES_DIM
         BACKBONE_TYPE = config.MODEL.BACKBONE_TYPE
 
         # ------------- Backbone -----------------------
         self.backbone = Backbone(BACKBONE_TYPE, non_local_flag=config.MODEL.NON_LOCAL_FLAG)
 
         # ------------- Global -----------------------
-        if config.DATASET.TRAIN_DATASET == "sysu_mm01":
-            self.global_pool = GeneralizedMeanPoolingP()
-            self.global_classifier = Classifier(2048, n_class)
-        elif config.DATASET.TRAIN_DATASET == "reg_db":
-
-            # ------------- Partialization -----------------------
-            self.local_conv_list = nn.ModuleList()
-            STRIPE_NUM = 6
-            pool_dim = 2048
-            local_conv_out_channels = 512
-            for _ in range(STRIPE_NUM):
-                conv_i = nn.Sequential(
-                    nn.Conv2d(pool_dim, local_conv_out_channels, 1),
-                    nn.BatchNorm2d(local_conv_out_channels),
-                    nn.ReLU(inplace=True),
-                )
-                conv_i.apply(weights_init_kaiming)
-                self.local_conv_list.append(conv_i)
-
-            # ------------- Global -----------------------
-            self.global_classifier = Classifier(STRIPE_NUM * local_conv_out_channels, n_class)
-            self.global_l2norm = Normalize(2)
-
-            # ------------- Local -----------------------
-            self.local_classifier_list = nn.ModuleList()
-            for _ in range(STRIPE_NUM):
-                local_classifier_i = Classifier(local_conv_out_channels, n_class)
-                self.local_classifier_list.append(local_classifier_i)
-
-        # ------------- Interaction -----------------------
-        self.interaction = Interaction()
-        if config.DATASET.TRAIN_DATASET == "reg_db":
-            self.interaction.apply(weights_init_kaiming)
-
-        # ------------- Calibration -----------------------
-        self.calibration = Calibration()
-        self.calibration_pooling = GeneralizedMeanPoolingP()
-        self.calibration_classifier = Classifier(BACKBONE_FEATURES_DIM, n_class)
-        if config.DATASET.TRAIN_DATASET == "reg_db":
-            self.calibration.apply(weights_init_kaiming)
-            self.calibration_pooling.apply(weights_init_kaiming)
-            self.calibration_classifier.apply(weights_init_classifier)
-
-        # # ------------- Propagation -----------------------
-        self.propagation = Propagation(T=4)
-        if config.DATASET.TRAIN_DATASET == "reg_db":
-            self.propagation.apply(weights_init_kaiming)
+        self.global_pool = GeneralizedMeanPoolingP()
+        self.global_classifier = Classifier(2048, n_class)
 
     def heatmap(self, x_vis, x_inf, modal):
         B, C, H, W = x_vis.shape
@@ -84,29 +37,10 @@ class ReIDNet(nn.Module):
             return backbone_feat_map
         else:
             eval_feats = []
-            if self.config.DATASET.TRAIN_DATASET == "sysu_mm01":
-                # ------------- Global -----------------------
-                global_feat = self.global_pool(backbone_feat_map).view(B, 2048)  # (B, 2048)
-                global_bn_feat, global_cls_score = self.global_classifier(global_feat)
-                eval_feats.append(global_bn_feat)
-            elif self.config.DATASET.TRAIN_DATASET == "reg_db":
-                # ------------- Partialization -----------------------
-                STRIPE_NUM = 6
-                local_feat_map_list = torch.chunk(backbone_feat_map, STRIPE_NUM, dim=2)
-                local_feat_list = []
-                for i in range(STRIPE_NUM):
-                    local_feat_map_i = local_feat_map_list[i]
-                    local_feat_map_i = local_feat_map_i.view(B, 2048, -1)
-                    p = 10.0  # regDB: 10.0    SYSU: 3.0
-                    local_feat_i = (torch.mean(local_feat_map_i**p, dim=-1) + 1e-12) ** (1 / p)
-                    local_feat_i = self.local_conv_list[i](local_feat_i.view(B, -1, 1, 1)).view(B, -1)
-                    local_feat_list.append(local_feat_i)
-
-                # ----------- Global ------------
-                global_feat = torch.cat(local_feat_list, dim=1)
-                global_bn_feat = self.global_l2norm(global_feat)
-                eval_feats.append(global_bn_feat)
-
+            # ------------- Global -----------------------
+            global_feat = self.global_pool(backbone_feat_map).view(B, 2048)  # (B, 2048)
+            global_bn_feat, global_cls_score = self.global_classifier(global_feat)
+            eval_feats.append(global_bn_feat)
             eval_feats = torch.cat(eval_feats, dim=1)
             return eval_feats
 
