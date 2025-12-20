@@ -84,6 +84,9 @@ class ReIDEvaluator:
 
 
 def evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=False, max_rank=50):
+    # ltcc_cc_setting be True: "Cloth-changing Setting": Gallery images with the same camera ID and the same clothes ID as the query person are filtered.
+    # ltcc_cc_setting be False: "Standard Setting": Gallery images with the same camera ID as the query person are filtered.
+
     num_q, num_g = distmat.shape
 
     if num_g < max_rank:
