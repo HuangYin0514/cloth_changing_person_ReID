@@ -9,7 +9,7 @@ TASK:
 
 DATA:
   TRAIN_DATASET: "ltcc"
-  TRAIN_ROOT: "/kaggle/input/sysu-mm01/SYSU_MM01/"
+  TRAIN_ROOT: "/kaggle/input/ltcc-dataset/LTCC/rgb/"
   MODE: "all" # all / indoor
   IMAGE_SIZE: [384, 192]
   BATCHSIZE: 32
@@ -33,6 +33,7 @@ TEST:
   EVAL_EPOCH: 2
   RESUME_TEST_MODEL: 119  
   TEST_MODE: "inter-camera" 
+  RE_RANK: False
 
 SAVE:
   OUTPUT_PATH: "results/outputs"

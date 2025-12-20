@@ -11,7 +11,7 @@ import util
 from build_criterion import Build_Criterion
 from build_optimizer import Build_Optimizer
 from build_scheduler import Build_Scheduler
-from core import train
+from core import test, train
 from data import build_dataloader
 from model import ReID_Net
 from tqdm import tqdm
@@ -39,8 +39,8 @@ def run(config):
 
     ######################################################################
     # Device
-    DEVICE = torch.device(config.TASK.DEVICE)
-    logger("Device is:\t {}".format(DEVICE))
+    device = torch.device(config.TASK.DEVICE)
+    logger("Device is:\t {}".format(device))
 
     ######################################################################
     # Data
@@ -50,8 +50,8 @@ def run(config):
 
     ######################################################################
     # Model
-    reid_net = ReID_Net(config, dataset.num_train_pids).to(DEVICE)
-    # logger("Model:\n {}".format(reid_net))
+    reid_net = ReID_Net(config, dataset.num_train_pids).to(device)
+    logger("Model:\n {}".format(reid_net))
 
     ######################################################################
     # Criterion
@@ -70,26 +70,33 @@ def run(config):
 
     ######################################################################
     # Training & Evaluation
-    logger("=====> Start Training...")
     # 初始化最佳指标
     best_epoch, best_mAP, best_rank1 = 0, 0, 0
     for epoch in range(0, config.OPTIMIZER.TOTAL_TRAIN_EPOCH):
-        meter = train(config, logger, epoch, reid_net, train_loader, criterion, optimizer, scheduler)
+        meter = train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch, logger)
         logger("Time: {}; Epoch: {}; {}".format(util.time_now(), epoch, meter.get_str()))
-        # wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
+        wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
 
-    #     # #########
-    #     # # Test
-    #     # #########
-    #     # if epoch % config.TEST.EVAL_EPOCH == 0:
-    #     #     # TODO
-    #     #     mAP, CMC = None, None
-    #     #     logger("Time: {}; Test on Dataset: {}, \nmAP: {} \nRank: {}".format(util.time_now(), config.DATASET.TRAIN_DATASET, mAP, CMC))
-    #     #     wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
+        if epoch % config.TEST.EVAL_EPOCH == 0:
+            logger("=====> Start Testing...")
+            end = time.time()
+            mAP, CMC = test(config, reid_net, query_loader, gallery_loader, device, logger)
+            logger("reid time:\t {:.3f}s".format(time.time() - end))
 
-    # logger("=" * 50)
-    # logger("Best model is: epoch: {}, rank1: {}, mAP: {}".format(best_epoch, best_rank1, best_mAP))
-    # logger("=" * 50)
+            is_best_rank_flag = CMC[0] >= best_rank1
+            if is_best_rank_flag:
+                best_epoch = epoch
+                best_rank1 = CMC[0]
+                best_mAP = mAP
+                wandb.log({"best_epoch": best_epoch, "best_rank1": best_rank1, "best_mAP": best_mAP})
+                if epoch > 40:
+                    util.save_model(model=reid_net, epoch=epoch, path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
+            logger("Time: {}; Test on Dataset: {}, \n mAP: {}; \n Rank: {}.".format(util.time_now(), config.DATA.TRAIN_DATASET, mAP, CMC))
+            wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
+
+    logger("=" * 50)
+    logger("Best model is: epoch: {}, rank1: {:.2f}%, mAP: {:.2f}%.".format(best_epoch, best_rank1 * 100, best_mAP * 100))
+    logger("=" * 50)
 
 
 if __name__ == "__main__":
@@ -98,13 +105,13 @@ if __name__ == "__main__":
     util.set_seed_torch(config.TASK.SEED)
 
     # 初始化wandb
-    # wandb.init(
-    #     entity="yinhuang-team-projects",
-    #     project=config.TASK.PROJECT,
-    #     name=config.TASK.NAME,
-    #     notes=config.TASK.NOTES,
-    #     tags=config.TASK.TAGS,
-    #     config=config,
-    # )
+    wandb.init(
+        entity="yinhuang-team-projects",
+        project=config.TASK.PROJECT,
+        name=config.TASK.NAME,
+        notes=config.TASK.NOTES,
+        tags=config.TASK.TAGS,
+        config=config,
+    )
     run(config)
-    # wandb.finish()
+    wandb.finish()

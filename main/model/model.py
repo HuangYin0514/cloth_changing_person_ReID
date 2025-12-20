@@ -28,10 +28,10 @@ class ReID_Net(nn.Module):
         backbone_feat_map = self.backbone(x_vis, x_inf, modal)
         return backbone_feat_map
 
-    def forward(self, x_vis, x_inf, modal):
-        B, C, H, W = x_vis.shape
+    def forward(self, img):
+        B, C, H, W = img.shape
 
-        backbone_feat_map = self.backbone(x_vis, x_inf, modal)
+        backbone_feat_map = self.backbone(img)
 
         if self.training:
             return backbone_feat_map
@@ -95,54 +95,24 @@ class Backbone(nn.Module):
         resnet.layer4[0].conv2.stride = (1, 1)
 
         # Backbone structure
-        self.vis_specific_layer = nn.Sequential(
+        self.layer0 = nn.Sequential(
             resnet.conv1,
             resnet.bn1,
             resnet.relu,
             resnet.maxpool,
         )
-        self.inf_specific_layer = copy.deepcopy(self.vis_specific_layer)
 
         self.layer1 = resnet.layer1  # 3 blocks
         self.layer2 = resnet.layer2  # 4 blocks
         self.layer3 = resnet.layer3  # 6 blocks
         self.layer4 = resnet.layer4  # 3 blocks
 
-        self.NL_2 = nn.ModuleList([Non_local(512) for i in range(2)])
-        self.NL_3 = nn.ModuleList([Non_local(1024) for i in range(3)])
-
-    def _NL_forward_layer(self, x, layer, NL_modules):
-        num_blocks = len(layer)
-        nl_start_idx = num_blocks - len(NL_modules)  # 从倒数层开始插入
-        nl_counter = 0
-        for i, block in enumerate(layer):
-            x = block(x)
-            if i >= nl_start_idx:
-                x = NL_modules[nl_counter](x)
-                nl_counter += 1
-        return x
-
-    def forward(self, x_vis, x_inf, modal):
-        if modal == "all":
-            x_vis = self.vis_specific_layer(x_vis)
-            x_inf = self.inf_specific_layer(x_inf)
-            x = torch.cat([x_vis, x_inf], dim=0)
-        elif modal == "vis":
-            x_vis = self.vis_specific_layer(x_vis)
-            x = x_vis
-        elif modal == "inf":
-            x_inf = self.inf_specific_layer(x_inf)
-            x = x_inf
-
-        out = self.layer1(x)
-        if self.non_local_flag:
-            out = self._NL_forward_layer(out, self.layer2, self.NL_2)
-            out = self._NL_forward_layer(out, self.layer3, self.NL_3)
-        else:
-            out = self.layer2(out)
-            out = self.layer3(out)
+    def forward(self, img):
+        out = self.layer0(img)
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
         out = self.layer4(out)
-
         return out
 
 

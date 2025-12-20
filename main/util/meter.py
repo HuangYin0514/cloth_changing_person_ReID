@@ -39,6 +39,7 @@ class MultiItemAverageMeter:
         return result
 
     def get_dict(self):
+        # For wandb
         result = {}
         keys, values = self.get_val()
 
