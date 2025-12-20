@@ -51,7 +51,7 @@ def run(config):
     ######################################################################
     # Model
     reid_net = ReID_Net(config, dataset.num_train_pids).to(device)
-    logger("Model:\n {}".format(reid_net))
+    # logger("Model:\n {}".format(reid_net))
 
     ######################################################################
     # Criterion

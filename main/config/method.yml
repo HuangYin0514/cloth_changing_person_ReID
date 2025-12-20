@@ -3,7 +3,6 @@ TASK:
   NOTES: "KaggleVersion_Notes"
   PROJECT: "CC_ReID"
   TAGS: ["dev", "train"]  
-  MODE: "train"  # train / visualization
   DEVICE: "cuda"  
   SEED: 1
 
