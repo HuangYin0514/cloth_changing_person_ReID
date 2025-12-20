@@ -2,6 +2,7 @@ import copy
 
 import torch
 import torch.nn as nn
+import util
 
 from .gem_pool import GeneralizedMeanPoolingP
 from .resnet import resnet50
@@ -17,7 +18,7 @@ class ReID_Net(nn.Module):
         BACKBONE_TYPE = config.MODEL.BACKBONE_TYPE
 
         # ------------- Backbone -----------------------
-        self.backbone = Backbone(BACKBONE_TYPE, non_local_flag=config.MODEL.NON_LOCAL_FLAG)
+        self.backbone = Backbone(BACKBONE_TYPE)
 
         # ------------- Global -----------------------
         self.global_pool = GeneralizedMeanPoolingP()
@@ -36,13 +37,14 @@ class ReID_Net(nn.Module):
         if self.training:
             return backbone_feat_map
         else:
-            eval_feats = []
+            eval_feat_meter = util.CatMeter()
             # ------------- Global -----------------------
             global_feat = self.global_pool(backbone_feat_map).view(B, 2048)  # (B, 2048)
             global_bn_feat, global_cls_score = self.global_classifier(global_feat)
-            eval_feats.append(global_bn_feat)
-            eval_feats = torch.cat(eval_feats, dim=1)
-            return eval_feats
+            eval_feat_meter.update(global_bn_feat)
+
+            eval_feat = eval_feat_meter.get_val()
+            return eval_feat
 
 
 #############################################################
@@ -80,14 +82,13 @@ class Classifier(nn.Module):
 
 
 class Backbone(nn.Module):
-    def __init__(self, backbone_type, non_local_flag):
+    def __init__(self, backbone_type):
         super(Backbone, self).__init__()
-        self.non_local_flag = non_local_flag
 
         resnet = None
         if backbone_type == "resnet50":
             resnet = resnet50(pretrained=True)
-        elif backbone_type == "resnet50_ibn_a":
+        if backbone_type == "resnet50_ibn_a":
             resnet = resnet50_ibn_a(pretrained=True)
 
         # Modifiy backbone
