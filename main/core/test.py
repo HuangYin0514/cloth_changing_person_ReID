@@ -81,12 +81,6 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         logger("Using re_ranking technology...")
         distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
 
-    # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(
-    #     distmat,
-    #     q_pids,
-    #     q_camids,
-    #     g_pids,
-    #     g_camids,
-    # )
+    # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(distmat, q_pids, q_camids, g_pids, g_camids) # 标准测试
     CMC, mAP = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothesids, g_clothesids, ltcc_cc_setting=False)
     return mAP, CMC[0:20]
