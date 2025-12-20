@@ -1,13 +1,14 @@
 import argparse
 import os
+import time
 import warnings
 
 import torch
 import torch.utils.data as data
 import util
-from data import Data_Loder, IdentitySampler
-from model import ReIDNet
-from main.core.visualization import visualization
+from core import visualization
+from data import build_dataloader
+from model import ReID_Net
 
 warnings.filterwarnings("ignore")
 
@@ -24,49 +25,30 @@ def run(config):
     ######################################################################
     # Logger
     logger = util.Logger(path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "logs/"), name="logger.log")
+    logger("Config:\t" + "*" * 20)
     logger(config)
+    logger("*" * 20)
 
     ######################################################################
     # Device
-    DEVICE = torch.device(config.TASK.DEVICE)
+    device = torch.device(config.TASK.DEVICE)
+    logger("Device is:\t {}".format(device))
 
     ######################################################################
     # Data
-    # Dataset返回数据格式：图像，身份标签，摄像头标签，路径
-    data_loder = Data_Loder(config)
+    end = time.time()
+    dataset, train_loader, query_loader, gallery_loader = build_dataloader(config)
+    logger("Data loading time:\t {:.3f}".format(time.time() - end))
 
     ######################################################################
     # Model
-    net = ReIDNet(config, data_loder.N_class).to(DEVICE)
-    util.resume_model(net, config.MODEL.RESUME_EPOCH, path=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
+    reid_net = ReID_Net(config, dataset.num_train_pids).to(device)
+    util.resume_model(reid_net, config.TEST.RESUME_EPOCH, path=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
 
     ########################################################
     # 可视化
     ########################################################
-    sampler = IdentitySampler(
-        data_loder.trainset.color_label,
-        data_loder.trainset.thermal_label,
-        data_loder.color_pos,
-        data_loder.thermal_pos,
-        config.DATALOADER.NUM_INSTANCES,
-        config.DATALOADER.BATCHSIZE,
-        config.MODEL.RESUME_EPOCH,
-    )
-    data_loder.trainset.cIndex = sampler.index1  # color index
-    data_loder.trainset.tIndex = sampler.index2  # thermal index
-
-    # dataloder
-    loader_batch = config.DATALOADER.BATCHSIZE * config.DATALOADER.NUM_INSTANCES
-    train_loader = data.DataLoader(
-        data_loder.trainset,
-        batch_size=loader_batch,
-        sampler=sampler,
-        num_workers=config.DATALOADER.NUM_WORKERS,
-        drop_last=True,
-    )
-    query_loader = data_loder.query_loader
-    gallery_loader = data_loder.gallery_loader
-    visualization(config, net, data_loder, train_loader, query_loader, gallery_loader, DEVICE)
+    visualization(config, reid_net, train_loader, query_loader, gallery_loader, logger, device)
 
 
 if __name__ == "__main__":

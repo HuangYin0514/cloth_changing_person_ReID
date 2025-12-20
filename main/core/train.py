@@ -9,8 +9,8 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
     reid_net.train()
     meter = util.MultiItemAverageMeter()
     for epoch, data in enumerate(tqdm(train_loader)):
-        img, pid, camid, clothes_id = data
-        img, pid, camid, clothes_id = img.to(device), pid.to(device), camid.to(device), clothes_id.to(device)
+        img, pid, camid, clotheid = data
+        img, pid, camid, clotheid = img.to(device), pid.to(device), camid.to(device), clotheid.to(device)
 
         if config.MODEL.MODULE == "Lucky":
             B = img.size(0)

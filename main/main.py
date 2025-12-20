@@ -3,10 +3,7 @@ import os
 import time
 import warnings
 
-import numpy as np
 import torch
-import torch.nn.functional as F
-import torch.utils.data as data
 import util
 from build_criterion import Build_Criterion
 from build_optimizer import Build_Optimizer
@@ -14,7 +11,6 @@ from build_scheduler import Build_Scheduler
 from core import test, train
 from data import build_dataloader
 from model import ReID_Net
-from tqdm import tqdm
 
 import wandb
 

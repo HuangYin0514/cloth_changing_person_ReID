@@ -23,9 +23,9 @@ class ReID_Net(nn.Module):
         self.global_pool = GeneralizedMeanPoolingP()
         self.global_classifier = Classifier(2048, n_class)
 
-    def heatmap(self, x_vis, x_inf, modal):
-        B, C, H, W = x_vis.shape
-        backbone_feat_map = self.backbone(x_vis, x_inf, modal)
+    def heatmap(self, img):
+        B, C, H, W = img.shape
+        backbone_feat_map = self.backbone(img)
         return backbone_feat_map
 
     def forward(self, img):
