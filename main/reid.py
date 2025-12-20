@@ -9,6 +9,7 @@ class ReIDEvaluator:
         self.mode = mode
 
     def evaluate(self, distmat, q_pids, q_camids, g_pids, g_camids):
+        # 排序
         rank_results = np.argsort(distmat)[:, ::-1]
 
         APs, CMC = [], []
