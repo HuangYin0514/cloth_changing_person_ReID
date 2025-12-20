@@ -23,15 +23,15 @@ MODEL:
 OPTIMIZER:
   NAME: "Adam"
   TOTAL_TRAIN_EPOCH: 80
-  LEARNING_RATE: 0.0005
+  LEARNING_RATE: 0.00035
 
 SCHEDULER:
   NAME: "WarmupMultiStepLR"
 
 TEST:
-  EVAL_EPOCH: 2
+  EVAL_EPOCH: 5
   RESUME_TEST_MODEL: 119  
-  TEST_MODE: "inter-camera" 
+  TEST_MODE: "inter-camera"  
   RE_RANK: False
 
 SAVE:

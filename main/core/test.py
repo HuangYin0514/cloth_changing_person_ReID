@@ -3,7 +3,7 @@ import time
 import numpy as np
 import torch
 from re_rank import re_ranking
-from reid import ReIDEvaluator
+from reid import ReIDEvaluator, evaluate_ltcc
 from sklearn import metrics as sk_metrics
 from torch.nn import functional as F
 from tqdm import tqdm
@@ -12,10 +12,10 @@ from util import CatMeter, time_now
 
 def get_data(dataset_loader, reid_net, device):
     with torch.no_grad():
-        feats_meter, pids_meter, camids_meter = CatMeter(), CatMeter(), CatMeter()
+        feats_meter, pids_meter, camids_meter, clothesid_meter = CatMeter(), CatMeter(), CatMeter(), CatMeter()
         for batch_idx, data in enumerate(tqdm(dataset_loader)):
-            img, pid, camid, clothes_id = data
-            img, pid, camid, clothes_id = img.to(device), pid.to(device), camid.to(device), clothes_id.to(device)
+            img, pid, camid, clothesid = data
+            img, pid, camid, clothesid = img.to(device), pid.to(device), camid.to(device), clothesid.to(device)
 
             # 原始特征
             bn_features = reid_net(img)
@@ -28,12 +28,14 @@ def get_data(dataset_loader, reid_net, device):
             feats_meter.update(bn_features.data)
             pids_meter.update(pid)
             camids_meter.update(camid)
+            clothesid_meter.update(clothesid)
 
     feats = feats_meter.get_val_numpy()
     pids = pids_meter.get_val_numpy()
     camids = camids_meter.get_val_numpy()
+    clothes_id = clothesid_meter.get_val_numpy()
 
-    return feats, pids, camids
+    return feats, pids, camids, clothes_id
 
 
 def cosine_dist(x, y):
@@ -70,8 +72,8 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
     reid_net.eval()
 
     with torch.no_grad():
-        qf, q_pids, q_camids = get_data(query_loader, reid_net, device)
-        gf, g_pids, g_camids = get_data(gallery_loader, reid_net, device)
+        qf, q_pids, q_camids, q_clothesids = get_data(query_loader, reid_net, device)
+        gf, g_pids, g_camids, g_clothesids = get_data(gallery_loader, reid_net, device)
 
     distmat = get_distmat(qf, gf)
 
@@ -79,11 +81,12 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         logger("Using re_ranking technology...")
         distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
 
-    mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(
-        distmat,
-        q_pids,
-        q_camids,
-        g_pids,
-        g_camids,
-    )
+    # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(
+    #     distmat,
+    #     q_pids,
+    #     q_camids,
+    #     g_pids,
+    #     g_camids,
+    # )
+    CMC, mAP = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothesids, g_clothesids, ltcc_cc_setting=False)
     return mAP, CMC[0:20]
