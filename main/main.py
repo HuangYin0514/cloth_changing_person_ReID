@@ -51,7 +51,7 @@ def run(config):
 
     ######################################################################
     # Criterion
-    criterion = Build_Criterion(config)
+    criterion = Build_Criterion(config, dataset.num_train_pids)
     logger("Criterion:\t {}".format(criterion))
 
     # ######################################################################

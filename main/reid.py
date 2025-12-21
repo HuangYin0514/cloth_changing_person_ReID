@@ -51,22 +51,24 @@ def evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clo
 
     for i in range(num_q):
         # groundtruth index
-        query_index = np.argwhere(g_pids == q_pids[i])
-        camera_index = np.argwhere(g_camids == q_camids[i])
-        cloth_index = np.argwhere(g_clothids == q_clothids[i])
-        good_index = np.setdiff1d(query_index, camera_index, assume_unique=True)
+        query_index = np.argwhere(g_pids == q_pids[i])  # pid相同
+        camera_index = np.argwhere(g_camids == q_camids[i])  # camid相同
+        cloth_index = np.argwhere(g_clothids == q_clothids[i])  # clothid相同
+        good_index = np.setdiff1d(
+            query_index, camera_index, assume_unique=True
+        )  # query_index和camera_index差集，pid相同且camid不同；【assume_unique=True表示假设输入的两个数组本身已经是无重复元素】
         if mode == "CC":
-            good_index = np.setdiff1d(good_index, cloth_index, assume_unique=True)
+            good_index = np.setdiff1d(good_index, cloth_index, assume_unique=True)  # pid相同且camid不同且clothid不同
             # remove gallery samples that have the same (pid, camid) or (pid, clothid) with query
-            junk_index1 = np.intersect1d(query_index, camera_index)
-            junk_index2 = np.intersect1d(query_index, cloth_index)
-            junk_index = np.union1d(junk_index1, junk_index2)
+            junk_index1 = np.intersect1d(query_index, camera_index)  # query_index和camera_index的交集，pid相同且camid相同
+            junk_index2 = np.intersect1d(query_index, cloth_index)  # pid相同且clothid相同 **********************
+            junk_index = np.union1d(junk_index1, junk_index2)  # junk_index1和junk_index2的并集，pid相同且camid相同或pid相同且clothid相同
         if mode == "SC":
             good_index = np.intersect1d(good_index, cloth_index)
             # remove gallery samples that have the same (pid, camid) or
             # (the same pid and different clothid) with query
             junk_index1 = np.intersect1d(query_index, camera_index)
-            junk_index2 = np.setdiff1d(query_index, cloth_index)
+            junk_index2 = np.setdiff1d(query_index, cloth_index)  # query_index和cloth_index差集， 剔除 “不同衣物” 的样本 **********************
             junk_index = np.union1d(junk_index1, junk_index2)
 
         if good_index.size == 0:

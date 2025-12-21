@@ -20,8 +20,9 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
 
             global_feat = reid_net.global_pool(backbone_feat_map).view(B, 2048)  # (B, 2048)
             global_bn_feat, global_cls_score = reid_net.global_classifier(global_feat)
-            global_id_loss = criterion.id(global_cls_score, pid)
-            global_loss = global_id_loss
+            global_id_loss = criterion.ce_ls(global_cls_score, pid)
+            global_tri_loss = criterion.tri(global_feat, pid)
+            global_loss = global_id_loss + global_tri_loss
             total_loss += global_loss
             meter.update({"global_loss": global_loss.item()})
 

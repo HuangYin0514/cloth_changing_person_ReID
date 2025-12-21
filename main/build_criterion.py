@@ -1,18 +1,16 @@
+import torch
 import torch.nn as nn
-from loss.center_triplet_loss import CenterTripletLoss
-from loss.hcc import hcc
-from loss.ori_triplet_loss import OriTripletLoss
+from loss import CrossEntropyLabelSmooth, TripletLoss
 
 
 class Build_Criterion:
-    def __init__(self, config):
-        self.build(config)
+    def __init__(self, config, *args, **kwargs):
+        self.build(config, *args, **kwargs)
 
-    def build(self, config):
-        self.id = nn.CrossEntropyLoss()
-        self.tri = OriTripletLoss(batch_size=config.DATA.BATCHSIZE, margin=0.3)
-        self.hcc = hcc(margin_euc=0.6, margin_kl=6)
-        self.ctl = CenterTripletLoss(batch_size=config.DATA.BATCHSIZE, margin=0.3)
+    def build(self, config, num_classes):
+        self.ce = nn.CrossEntropyLoss()
+        self.ce_ls = CrossEntropyLabelSmooth(num_classes=num_classes, epsilon=0.1, use_gpu=torch.cuda.is_available())
+        self.tri = TripletLoss(margin=0.3)
 
     def __repr__(self):
         class_name = self.__class__.__name__
