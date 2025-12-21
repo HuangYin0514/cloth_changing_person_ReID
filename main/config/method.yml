@@ -10,7 +10,8 @@ DATA:
   TRAIN_DATASET: "ltcc"
   TRAIN_ROOT: "/kaggle/input/ltcc-dataset/LTCC/rgb/"
   MODE: "all" # all / indoor
-  IMAGE_SIZE: [384, 192]
+  IMAGE_HEIGHT: 384
+  IMAGE_WIDTH: 192
   BATCHSIZE: 32
   NUM_INSTANCES: 8
   TEST_BATCH: 128

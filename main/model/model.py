@@ -21,8 +21,12 @@ class ReID_Net(nn.Module):
         self.backbone = Backbone(BACKBONE_TYPE)
 
         # ------------- Global -----------------------
-        self.global_pool = GeneralizedMeanPoolingP()
-        self.global_classifier = Classifier(2048, n_class)
+        # self.global_pool = GeneralizedMeanPoolingP()
+        # self.global_classifier = Classifier(2048, n_class)
+
+        self.BACKBONE_DIM = 2048 * 2
+        self.global_pool = MaxAvgPool2d()
+        self.global_classifier = Classifier(self.BACKBONE_DIM, n_class)
 
     def heatmap(self, img):
         B, C, H, W = img.shape
@@ -39,7 +43,7 @@ class ReID_Net(nn.Module):
         else:
             eval_feat_meter = util.CatMeter()
             # ------------- Global -----------------------
-            global_feat = self.global_pool(backbone_feat_map).view(B, 2048)  # (B, 2048)
+            global_feat = self.global_pool(backbone_feat_map).view(B, self.BACKBONE_DIM)
             global_bn_feat, global_cls_score = self.global_classifier(global_feat)
             eval_feat_meter.update(global_bn_feat)
 
@@ -57,6 +61,18 @@ class Normalize(nn.Module):
         norm = x.pow(self.power).sum(1, keepdim=True).pow(1.0 / self.power)
         out = x.div(norm)
         return out
+
+
+class MaxAvgPool2d(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.maxpooling = nn.AdaptiveMaxPool2d(1)
+        self.avgpooling = nn.AdaptiveAvgPool2d(1)
+
+    def forward(self, x):
+        max_f = self.maxpooling(x)
+        avg_f = self.avgpooling(x)
+        return torch.cat((max_f, avg_f), 1)
 
 
 class Classifier(nn.Module):

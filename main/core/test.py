@@ -2,12 +2,11 @@ import time
 
 import numpy as np
 import torch
-from re_rank import re_ranking
 from reid import ReIDEvaluator, evaluate_ltcc
 from sklearn import metrics as sk_metrics
 from torch.nn import functional as F
 from tqdm import tqdm
-from util import CatMeter, time_now
+from util import CatMeter, re_ranking, time_now
 
 
 def get_data(dataset_loader, reid_net, device):

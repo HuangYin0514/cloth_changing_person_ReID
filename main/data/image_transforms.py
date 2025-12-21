@@ -73,18 +73,15 @@ class RandomCroping(object):
 
 
 class RandomErasing(object):
-    """
-    Randomly selects a rectangle region in an image and erases its pixels.
-
-    Reference:
-        Zhong et al. Random Erasing Data Augmentation. arxiv: 1708.04896, 2017.
-
+    """Randomly selects a rectangle region in an image and erases its pixels.
+        'Random Erasing Data Augmentation' by Zhong et al.
+        See https://arxiv.org/pdf/1708.04896.pdf
     Args:
-        probability: The probability that the Random Erasing operation will be performed.
-        sl: Minimum proportion of erased area against input image.
-        sh: Maximum proportion of erased area against input image.
-        r1: Minimum aspect ratio of erased area.
-        mean: Erasing value.
+         probability: The probability that the Random Erasing operation will be performed.
+         sl: Minimum proportion of erased area against input image.
+         sh: Maximum proportion of erased area against input image.
+         r1: Minimum aspect ratio of erased area.
+         mean: Erasing value.
     """
 
     def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, mean=[0.4914, 0.4822, 0.4465]):
@@ -96,7 +93,7 @@ class RandomErasing(object):
 
     def __call__(self, img):
 
-        if random.uniform(0, 1) >= self.probability:
+        if random.uniform(0, 1) > self.probability:
             return img
 
         for attempt in range(100):
