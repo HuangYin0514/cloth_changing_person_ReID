@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 
 def train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch, logger):
-    # scheduler.step(epoch) # for cc
+    scheduler.step(epoch)  # for cc
     reid_net.train()
     meter = util.MultiItemAverageMeter()
     for epoch, data in enumerate(tqdm(train_loader)):
@@ -29,6 +29,5 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
-    scheduler.step(epoch)  # for cc
 
     return meter
