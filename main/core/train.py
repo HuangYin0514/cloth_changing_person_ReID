@@ -18,7 +18,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
 
             backbone_feat_map = reid_net(img)
 
-            global_feat = reid_net.global_pool(backbone_feat_map).view(B, reid_net.BACKBONE_DIM)
+            global_feat = reid_net.global_pool(backbone_feat_map).view(B, reid_net.GLOBAL_DIM)
             global_bn_feat, global_cls_score = reid_net.global_classifier(global_feat)
             global_id_loss = criterion.ce_ls(global_cls_score, pid)
             global_tri_loss = criterion.tri(global_feat, pid)

@@ -1,15 +1,9 @@
-import random
-
-import numpy as np
-import torch.utils.data as data
-import torchvision.transforms as transforms
 import torchvision.transforms as T
-from PIL import Image
 from torch.utils.data import DataLoader
 
 from .datasets import LTCC
 from .image_dataset import ImageDataset
-from .image_transforms import RandomCroping, RandomErasing
+from .image_transforms import RandomErasing
 from .samplers import RandomIdentitySampler
 
 

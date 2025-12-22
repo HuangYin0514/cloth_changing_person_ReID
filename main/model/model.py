@@ -21,12 +21,13 @@ class ReID_Net(nn.Module):
         self.backbone = Backbone(BACKBONE_TYPE)
 
         # ------------- Global -----------------------
-        # self.global_pool = GeneralizedMeanPoolingP()
-        # self.global_classifier = Classifier(2048, n_class)
+        self.GLOBAL_DIM = 2048
+        self.global_pool = GeneralizedMeanPoolingP()
+        self.global_classifier = Classifier(self.GLOBAL_DIM, n_class)
 
-        self.BACKBONE_DIM = 2048 * 2
-        self.global_pool = MaxAvgPool2d()
-        self.global_classifier = Classifier(self.BACKBONE_DIM, n_class)
+        # self.GLOBAL_DIM = 2048 * 2
+        # self.global_pool = MaxAvgPool2d()
+        # self.global_classifier = Classifier(self.GLOBAL_DIM, n_class)
 
     def heatmap(self, img):
         B, C, H, W = img.shape
@@ -43,7 +44,7 @@ class ReID_Net(nn.Module):
         else:
             eval_feat_meter = util.CatMeter()
             # ------------- Global -----------------------
-            global_feat = self.global_pool(backbone_feat_map).view(B, self.BACKBONE_DIM)
+            global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
             global_bn_feat, global_cls_score = self.global_classifier(global_feat)
             eval_feat_meter.update(global_bn_feat)
 
