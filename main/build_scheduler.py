@@ -20,7 +20,7 @@ class Build_Scheduler:
                 gamma=0.1,
                 warmup_factor=0.01,
                 warmup_iters=10,
-                last_epoch=start_epoch - 2,
+                last_epoch=-2,
             )
 
         if config.SCHEDULER.NAME == "Adjust_Learning_Rate":
