@@ -16,11 +16,11 @@ class Build_Scheduler:
         if config.SCHEDULER.NAME == "WarmupMultiStepLR":
             self.scheduler = WarmupMultiStepLR(
                 optimizer,
-                [20, 40, 60],
+                [30, 60],
                 gamma=0.1,
                 warmup_factor=0.01,
                 warmup_iters=10,
-                last_epoch=-2,
+                last_epoch=-1,
             )
 
         if config.SCHEDULER.NAME == "Adjust_Learning_Rate":
