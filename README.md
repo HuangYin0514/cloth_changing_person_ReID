@@ -3,3 +3,4 @@
 
 # DO LIST
 1. scheduler 位置影响精度
+2. 修改loss
