@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from .datasets import LTCC
 from .image_dataset import ImageDataset
 from .image_transforms import RandomErasing
-from .samplers import RandomIdentitySampler
+from .samplers import RandomIdentitySampler_cc
 
 
 def build_img_transforms(config):
@@ -43,7 +43,7 @@ def build_dataloader(config):
         query_dataset = ImageDataset(dataset.query, transform=transform_test)
         gallery_dataset = ImageDataset(dataset.gallery, transform=transform_test)
 
-        train_sampler = RandomIdentitySampler(dataset.train, num_instances=config.DATA.NUM_INSTANCES)
+        train_sampler = RandomIdentitySampler_cc(dataset.train, batch_size=config.DATA.BATCHSIZE, num_instances=config.DATA.NUM_INSTANCES)
         train_loader = DataLoader(
             dataset=train_dataset,
             sampler=train_sampler,
