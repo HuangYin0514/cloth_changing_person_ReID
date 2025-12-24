@@ -85,8 +85,8 @@ def run(config):
                 best_rank1 = CMC[0]
                 best_mAP = mAP
                 wandb.log({"best_epoch": best_epoch, "best_rank1": best_rank1, "best_mAP": best_mAP})
-                if epoch > 60:
-                    util.save_model(model=reid_net, epoch=epoch, path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
+                # if epoch > 40:
+                #     util.save_model(model=reid_net, epoch=epoch, path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
             logger("Time: {}; Test on Dataset: {}, \n mAP: {}; \n Rank: {}.".format(util.time_now(), config.DATA.TRAIN_DATASET, mAP, CMC))
             wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
 
