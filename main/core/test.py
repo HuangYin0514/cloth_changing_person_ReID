@@ -46,8 +46,8 @@ def cosine_dist(x, y):
     x = normalize(x)
     y = normalize(y)
     cos_sim = np.matmul(x, y.transpose([1, 0]))
-    cos_dist = 1 - cos_sim  # 余弦距离 = 1 - 余弦相似度
-    return cos_dist
+    distmat = 1 - cos_sim  # 余弦距离 = 1 - 余弦相似度
+    return distmat
 
 
 def euclidean_dist(qf, gf):
@@ -78,8 +78,8 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         qf, q_pids, q_camids, q_clothids = get_data(query_loader, reid_net, device)
         gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
 
-    # distmat = get_distmat(qf, gf, dist="cosine")
-    distmat = get_distmat(qf, gf, dist="euclidean")
+    distmat = get_distmat(qf, gf, dist="cosine")
+    # distmat = get_distmat(qf, gf, dist="euclidean")
 
     if config.TEST.RE_RANK:
         logger("Using re_ranking technology...")
