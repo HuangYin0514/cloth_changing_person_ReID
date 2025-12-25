@@ -106,7 +106,8 @@ class ReIDEvaluator:
 
     def evaluate(self, distmat, q_pids, q_camids, g_pids, g_camids):
         # 排序
-        rank_results = np.argsort(distmat)[:, ::-1]
+        # rank_results = np.argsort(distmat)[:, ::-1]
+        rank_results = np.argsort(distmat, axis=1)  # from small to large
 
         APs, CMC = [], []
         for idx, data in enumerate(zip(rank_results, q_pids, q_camids)):

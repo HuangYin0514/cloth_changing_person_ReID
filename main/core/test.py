@@ -45,18 +45,21 @@ def cosine_dist(x, y):
 
     x = normalize(x)
     y = normalize(y)
-    # cos_sim = np.matmul(x, y.transpose([1, 0]))
-    # cos_dist = 1 - cos_sim  # 余弦距离 = 1 - 余弦相似度
-    return np.matmul(x, y.transpose([1, 0]))
+    cos_sim = np.matmul(x, y.transpose([1, 0]))
+    cos_dist = 1 - cos_sim  # 余弦距离 = 1 - 余弦相似度
+    return cos_dist
 
 
-def euclidean_dist(x, y):
-    return sk_metrics.pairwise.euclidean_distances(x, y)
-
-
-def gaussian_kernel_function(x, y):
-    similarity = np.exp(np.square((x - y)))
-    return similarity
+def euclidean_dist(qf, gf):
+    # feature normalization
+    qf = 1.0 * qf / (torch.norm(qf, 2, dim=-1, keepdim=True).expand_as(qf) + 1e-12)
+    gf = 1.0 * gf / (torch.norm(gf, 2, dim=-1, keepdim=True).expand_as(gf) + 1e-12)
+    # get distmat matrix
+    m, n = qf.size(0), gf.size(0)
+    distmat = torch.pow(qf, 2).sum(dim=1, keepdim=True).expand(m, n) + torch.pow(gf, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+    distmat.addmm_(qf, gf.t(), beta=1, alpha=-2)
+    distmat = distmat.numpy()
+    return distmat
 
 
 def get_distmat(qf, gf, dist="cosine"):
@@ -64,9 +67,7 @@ def get_distmat(qf, gf, dist="cosine"):
     if dist == "cosine":
         distmat = cosine_dist(qf, gf)
     if dist == "euclidean":
-        distmat = euclidean_dist(qf, gf)
-    if dist == "gaussian":
-        distmat = gaussian_kernel_function(qf, gf)
+        distmat = euclidean_dist(torch.from_numpy(qf), torch.from_numpy(gf))
     return distmat
 
 
@@ -77,14 +78,14 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         qf, q_pids, q_camids, q_clothids = get_data(query_loader, reid_net, device)
         gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
 
-    # distmat = -get_distmat(qf, gf, dist="cosine")
+    # distmat = get_distmat(qf, gf, dist="cosine")
     distmat = get_distmat(qf, gf, dist="euclidean")
 
     if config.TEST.RE_RANK:
         logger("Using re_ranking technology...")
         distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
 
-    # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(-distmat, q_pids, q_camids, g_pids, g_camids)  # 标准测试
+    # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(distmat, q_pids, q_camids, g_pids, g_camids)  # 标准测试
     CMC_SC, mAP_SC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, mode="SC")
     logger("SC mode, \t mAP: {:.2f}; \t Rank: {}.".format(mAP_SC, CMC_SC[0:20]))
     CMC_CC, mAP_CC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, mode="CC")
