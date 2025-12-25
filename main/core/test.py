@@ -75,15 +75,16 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         qf, q_pids, q_camids, q_clothids = get_data(query_loader, reid_net, device)
         gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
 
+    # distmat = -get_distmat(qf, gf, dist="cosine")
     distmat = get_distmat(qf, gf, dist="euclidean")
 
     if config.TEST.RE_RANK:
         logger("Using re_ranking technology...")
         distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
 
-    # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(distmat, q_pids, q_camids, g_pids, g_camids)  # 标准测试
-    CMC_SC, mAP_SC = evaluate_ltcc(-distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, mode="SC")
+    # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(-distmat, q_pids, q_camids, g_pids, g_camids)  # 标准测试
+    CMC_SC, mAP_SC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, mode="SC")
     logger("SC mode, \t mAP: {:.2f}; \t Rank: {}.".format(mAP_SC, CMC_SC[0:20]))
-    CMC_CC, mAP_CC = evaluate_ltcc(-distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, mode="CC")
+    CMC_CC, mAP_CC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, mode="CC")
     logger("CC mode, \t mAP: {:.2f}; \t Rank: {}.".format(mAP_CC, CMC_CC[0:20]))
     return mAP_CC, CMC_CC[0:20]
