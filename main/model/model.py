@@ -3,6 +3,7 @@ import copy
 import torch.nn as nn
 import util
 
+from .classifier import Classifier
 from .gem_pool import GeneralizedMeanPoolingP
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
@@ -49,28 +50,6 @@ class ReID_Net(nn.Module):
 
 
 #############################################################
-
-
-class Classifier(nn.Module):
-    """
-    BN -> Classifier
-    """
-
-    def __init__(self, c_dim, pid_num):
-        super(Classifier, self).__init__()
-        self.pid_num = pid_num
-
-        self.bottleneck = nn.BatchNorm1d(c_dim)
-        self.bottleneck.bias.requires_grad_(False)  # no shift
-        self.bottleneck.apply(weights_init_kaiming)
-
-        self.classifier = nn.Linear(c_dim, self.pid_num, bias=False)
-        self.classifier.apply(weights_init_classifier)
-
-    def forward(self, features):
-        bn_features = self.bottleneck(features.squeeze())
-        cls_score = self.classifier(bn_features)
-        return bn_features, cls_score
 
 
 class Backbone(nn.Module):
