@@ -10,8 +10,8 @@ class Build_Clothe_BASE:
         super(Build_Clothe_BASE, self).__init__()
         self.build(config, *args, **kwargs)
 
-    def build(self, config, global_dim, num_pids, pid2clothes, device):
-        self.clothe_classifier = NormalizedClassifier(global_dim, num_pids).to(device)
+    def build(self, config, global_dim, num_clothe_pids, pid2clothes, device):
+        self.clothe_classifier = NormalizedClassifier(global_dim, num_clothe_pids).to(device)
         self.optimizer = Build_Optimizer(config, self.clothe_classifier).optimizer
         self.pid2clothes = torch.from_numpy(pid2clothes)
         self.criterion_ce = nn.CrossEntropyLoss().to(device)

@@ -50,7 +50,7 @@ def run(config):
     # Model
     reid_net = ReID_Net(config, dataset.num_train_pids).to(device)
     # logger("Model:\n {}".format(reid_net))
-    clothe_base = Build_Clothe_BASE(config, reid_net.GLOBAL_DIM, dataset.num_train_pids, dataset.pid2clothes, device)
+    clothe_base = Build_Clothe_BASE(config, reid_net.GLOBAL_DIM, dataset.num_train_clothes, dataset.pid2clothes, device)
 
     ######################################################################
     # Criterion
