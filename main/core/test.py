@@ -23,7 +23,7 @@ def get_data(dataset_loader, reid_net, device):
             flip_images = torch.flip(img, [3])
             flip_bn_features = reid_net(flip_images)
             bn_features = bn_features + flip_bn_features
-            # bn_features = F.normalize(bn_features, p=2, dim=1)
+            bn_features = F.normalize(bn_features, p=2, dim=1)
 
             feats_meter.update(bn_features.data)
             pids_meter.update(pid)
