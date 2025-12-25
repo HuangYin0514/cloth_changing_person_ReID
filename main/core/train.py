@@ -19,7 +19,7 @@ def train(config, reid_net, clothe_base, train_loader, criterion, optimizer, sch
             # Global
             global_feat = reid_net.global_pool(backbone_feat_map).view(B, reid_net.GLOBAL_DIM)
 
-            if epoch > -1:
+            if epoch > 25:
                 # update clothe discriminator
                 clothe_cls_score = clothe_base.clothe_classifier(global_feat.detach())
                 clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)
