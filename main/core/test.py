@@ -45,6 +45,8 @@ def cosine_dist(x, y):
 
     x = normalize(x)
     y = normalize(y)
+    # cos_sim = np.matmul(x, y.transpose([1, 0]))
+    # cos_dist = 1 - cos_sim  # 余弦距离 = 1 - 余弦相似度
     return np.matmul(x, y.transpose([1, 0]))
 
 
