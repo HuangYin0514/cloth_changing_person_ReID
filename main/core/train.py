@@ -18,19 +18,20 @@ def train(config, reid_net, clothe_base, train_loader, criterion, optimizer, sch
 
             # Global
             global_feat = reid_net.global_pool(backbone_feat_map).view(B, reid_net.GLOBAL_DIM)
+            global_bn_feat, global_cls_score = reid_net.global_classifier(global_feat)
 
             if epoch > 25:
                 # update clothe discriminator
-                clothe_cls_score = clothe_base.clothe_classifier(global_feat.detach())
+                clothe_base.clothe_classifier.train()
+                clothe_cls_score = clothe_base.clothe_classifier(global_bn_feat.detach())
                 clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)
                 clothe_base.optimizer.zero_grad()
                 clothe_loss.backward()
                 clothe_base.optimizer.step()
 
-            global_bn_feat, global_cls_score = reid_net.global_classifier(global_feat)
             global_id_loss = criterion.ce_ls(global_cls_score, pid)
             # global_tri_loss = criterion.tri(global_feat, pid)
-            new_clothe_cls_score = clothe_base.clothe_classifier(global_feat)
+            new_clothe_cls_score = clothe_base.clothe_classifier(global_bn_feat)
             global_clothe_adv_loss = clothe_base.criterion_adv(new_clothe_cls_score, clotheid, clothe_base.pid2clothes[pid])
             global_loss = global_id_loss + global_clothe_adv_loss
             total_loss += global_loss
