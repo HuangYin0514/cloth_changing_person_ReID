@@ -4,7 +4,7 @@ TASK:
   PROJECT: "CC_ReID"
   TAGS: ["dev", "train"]  
   DEVICE: "cuda"  
-  SEED: 666
+  SEED: 1
 
 DATA:
   TRAIN_DATASET: "ltcc"
@@ -22,11 +22,11 @@ MODEL:
 
 OPTIMIZER:
   NAME: "Adam"
-  TOTAL_TRAIN_EPOCH: 120
+  TOTAL_TRAIN_EPOCH: 80
   LEARNING_RATE: 0.00035
 
 SCHEDULER:
-  NAME: "WarmupMultiStepLR"
+  NAME: "MultiStepLR"
 
 TEST:
   EVAL_EPOCH: 5

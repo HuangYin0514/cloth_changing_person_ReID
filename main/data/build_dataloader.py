@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 
 from .datasets import LTCC
 from .image_dataset import ImageDataset
-from .image_transforms import RandomErasing
+from .image_transforms import RandomCroping, RandomErasing
 from .samplers import RandomIdentitySampler_cc
 
 
@@ -11,12 +11,12 @@ def build_img_transforms(config):
     transform_train = T.Compose(
         [
             T.Resize((config.DATA.IMAGE_HEIGHT, config.DATA.IMAGE_WIDTH)),
+            RandomCroping((config.DATA.IMAGE_HEIGHT, config.DATA.IMAGE_WIDTH)),
             T.RandomHorizontalFlip(p=0.5),
             T.Pad(padding=10),
-            T.RandomCrop((config.DATA.IMAGE_HEIGHT, config.DATA.IMAGE_WIDTH)),
             T.ToTensor(),
             T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            RandomErasing(probability=0.5, mean=[0.0, 0.0, 0.0]),
+            RandomErasing(probability=0.5),
         ]
     )
     transform_test = T.Compose(

@@ -4,39 +4,6 @@ import random
 from PIL import Image
 
 
-class ResizeWithEqualScale(object):
-    """
-    Resize an image with equal scale as the original image.
-
-    Args:
-        height (int): resized height.
-        width (int): resized width.
-        interpolation: interpolation manner.
-        fill_color (tuple): color for padding.
-    """
-
-    def __init__(self, height, width, interpolation=Image.BILINEAR, fill_color=(0, 0, 0)):
-        self.height = height
-        self.width = width
-        self.interpolation = interpolation
-        self.fill_color = fill_color
-
-    def __call__(self, img):
-        width, height = img.size
-        if self.height / self.width >= height / width:
-            height = int(self.width * (height / width))
-            width = self.width
-        else:
-            width = int(self.height * (width / height))
-            height = self.height
-
-        resized_img = img.resize((width, height), self.interpolation)
-        new_img = Image.new("RGB", (self.width, self.height), self.fill_color)
-        new_img.paste(resized_img, (int((self.width - width) / 2), int((self.height - height) / 2)))
-
-        return new_img
-
-
 class RandomCroping(object):
     """
     With a probability, first increase image size to (1 + 1/8), and then perform random crop.
@@ -73,15 +40,18 @@ class RandomCroping(object):
 
 
 class RandomErasing(object):
-    """Randomly selects a rectangle region in an image and erases its pixels.
-        'Random Erasing Data Augmentation' by Zhong et al.
-        See https://arxiv.org/pdf/1708.04896.pdf
+    """
+    Randomly selects a rectangle region in an image and erases its pixels.
+
+    Reference:
+        Zhong et al. Random Erasing Data Augmentation. arxiv: 1708.04896, 2017.
+
     Args:
-         probability: The probability that the Random Erasing operation will be performed.
-         sl: Minimum proportion of erased area against input image.
-         sh: Maximum proportion of erased area against input image.
-         r1: Minimum aspect ratio of erased area.
-         mean: Erasing value.
+        probability: The probability that the Random Erasing operation will be performed.
+        sl: Minimum proportion of erased area against input image.
+        sh: Maximum proportion of erased area against input image.
+        r1: Minimum aspect ratio of erased area.
+        mean: Erasing value.
     """
 
     def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, mean=[0.4914, 0.4822, 0.4465]):
@@ -93,7 +63,7 @@ class RandomErasing(object):
 
     def __call__(self, img):
 
-        if random.uniform(0, 1) > self.probability:
+        if random.uniform(0, 1) >= self.probability:
             return img
 
         for attempt in range(100):
