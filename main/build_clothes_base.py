@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from build_optimizer import Build_Optimizer
+import torch.optim as optim
 from model import NormalizedClassifier
 
 
@@ -12,8 +12,12 @@ class Build_Clothe_BASE:
 
     def build(self, config, global_dim, num_clothe_pids, pid2clothes, device):
         self.clothe_classifier = NormalizedClassifier(global_dim, num_clothe_pids).to(device)
-        self.optimizer = Build_Optimizer(config, self.clothe_classifier).optimizer
+
+        model_params_group = [{"params": self.clothe_classifier.parameters(), "lr": config.OPTIMIZER.LEARNING_RATE, "weight_decay": 5e-4, "momentum": 0.9}]
+        self.optimizer = optim.Adam(model_params_group)
+
         self.pid2clothes = torch.from_numpy(pid2clothes).to(device)
+
         self.criterion_ce = nn.CrossEntropyLoss().to(device)
         self.criterion_adv = ClothesBasedAdversarialLoss(device=device)
 
