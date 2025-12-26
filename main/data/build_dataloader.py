@@ -11,7 +11,7 @@ def build_img_transforms(config):
     transform_train = T.Compose(
         [
             T.Resize((config.DATA.IMAGE_HEIGHT, config.DATA.IMAGE_WIDTH)),
-            RandomCroping((config.DATA.IMAGE_HEIGHT, config.DATA.IMAGE_WIDTH)),
+            RandomCroping(p=0.5),
             T.RandomHorizontalFlip(p=0.5),
             T.Pad(padding=10),
             T.ToTensor(),
