@@ -14,7 +14,11 @@ class Build_Scheduler:
 
         if config.SCHEDULER.NAME == "MultiStepLR":
 
-            self.scheduler = lr_scheduler.MultiStepLR(optimizer, milestones=[20, 40], gamma=0.1)
+            self.scheduler = lr_scheduler.MultiStepLR(
+                optimizer,
+                milestones=[20, 40],
+                gamma=0.1,
+            )
 
         if config.SCHEDULER.NAME == "WarmupMultiStepLR":
             self.scheduler = WarmupMultiStepLR(
