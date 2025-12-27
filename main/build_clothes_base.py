@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from loss import CosFaceLoss
 from model import NormalizedClassifier
 
 
@@ -19,6 +20,7 @@ class Build_Clothe_BASE:
         self.pid2clothes = torch.from_numpy(pid2clothes).to(device)
 
         self.criterion_ce = nn.CrossEntropyLoss().to(device)
+        self.criterion_cfl = CosFaceLoss(scale=16.0, margin=0).to(device)
         self.criterion_adv = ClothesBasedAdversarialLoss(device=device)
 
 
