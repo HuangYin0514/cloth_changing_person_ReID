@@ -24,20 +24,20 @@ def train(config, reid_net, clothe_base, train_loader, criterion, optimizer, sch
             global_loss = global_id_loss
             total_loss += global_loss
 
-            if epoch > 25:
-                # 提升衣服分类器性能
-                clothe_base.clothe_classifier.train()
-                clothe_cls_score = clothe_base.clothe_classifier(global_bn_feat.detach())
-                clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)
-                clothe_base.optimizer.zero_grad()
-                clothe_loss.backward()
-                clothe_base.optimizer.step()
+            # if epoch > 25:
+            #     # 提升衣服分类器性能
+            #     clothe_base.clothe_classifier.train()
+            #     clothe_cls_score = clothe_base.clothe_classifier(global_bn_feat.detach())
+            #     clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)
+            #     clothe_base.optimizer.zero_grad()
+            #     clothe_loss.backward()
+            #     clothe_base.optimizer.step()
 
-            if epoch > 25:
-                # 混淆骨干网络衣服信息
-                new_clothe_cls_score = clothe_base.clothe_classifier(global_bn_feat)
-                global_clothe_adv_loss = clothe_base.criterion_adv(new_clothe_cls_score, clotheid, clothe_base.pid2clothes[pid])
-                total_loss += global_clothe_adv_loss
+            # if epoch > 25:
+            #     # 混淆骨干网络衣服信息
+            #     new_clothe_cls_score = clothe_base.clothe_classifier(global_bn_feat)
+            #     global_clothe_adv_loss = clothe_base.criterion_adv(new_clothe_cls_score, clotheid, clothe_base.pid2clothes[pid])
+            #     total_loss += global_clothe_adv_loss
 
             meter.update({"global_loss": global_loss.item()})
 
