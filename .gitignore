@@ -12,8 +12,6 @@
 # Common
 *.ipynb_checkpoints/
 *__pycache__/
-**/__pycache__/
-__pycache__/
 
 # Project
 *_dataset_processing/
@@ -47,6 +45,7 @@ __pycache__/
 *.log
 *.png
 
+# 修复pyc文件异常上传的问题
 # git rm --cached '**/*.pyc'
 # git add .gitignore
 # git commit -m "fix: 优化 .gitignore 配置，正确忽略 pycache 和 pyc 文件"
