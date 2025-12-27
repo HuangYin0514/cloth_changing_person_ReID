@@ -126,4 +126,4 @@ class TripletLoss(object):
             loss = self.ranking_loss(dist_an, dist_ap, y)
         else:
             loss = self.ranking_loss(dist_an - dist_ap, y)
-        return loss, dist_ap, dist_an
+        return loss
