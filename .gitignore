@@ -47,3 +47,6 @@ __pycache__/
 *.log
 *.png
 
+# git rm --cached '**/*.pyc'
+# git add .gitignore
+# git commit -m "fix: 优化 .gitignore 配置，正确忽略 pycache 和 pyc 文件"
