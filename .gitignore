@@ -12,6 +12,8 @@
 # Common
 *.ipynb_checkpoints/
 *__pycache__/
+**/__pycache__/
+__pycache__/
 
 # Project
 *_dataset_processing/
@@ -30,7 +32,7 @@
 *_历史代码/
 
 # File ----------------------------------------------------------------
-*.pyc
+*.pyc 
 *.txt
 *.pkl
 *.tar
