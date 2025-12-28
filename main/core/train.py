@@ -19,6 +19,12 @@ def train(config, reid_net, clothe_base, train_loader, criterion, optimizer, sch
             global_feat = reid_net.global_pool(backbone_feat_map).view(B, reid_net.GLOBAL_DIM)
             global_bn_feat, global_cls_score = reid_net.global_classifier(global_feat)
 
+            global_id_loss = criterion.ce_ls(global_cls_score, pid)
+            global_tri_loss = criterion.tri(global_feat, pid)
+            global_loss = global_id_loss + global_tri_loss * 0
+            meter.update({"global_loss": global_loss.item()})
+            total_loss += global_loss
+
             if epoch > 25:
                 # 提升衣服分类器性能
                 clothe_cls_score = clothe_base.clothe_classifier(global_bn_feat.detach())
@@ -27,13 +33,6 @@ def train(config, reid_net, clothe_base, train_loader, criterion, optimizer, sch
                 clothe_loss.backward()
                 clothe_base.optimizer.step()
 
-            global_id_loss = criterion.ce_ls(global_cls_score, pid)
-            global_tri_loss = criterion.tri(global_feat, pid)
-            global_loss = global_id_loss + global_tri_loss * 0
-            meter.update({"global_loss": global_loss.item()})
-            total_loss += global_loss
-
-            if epoch > 25:
                 # 混淆骨干网络衣服信息
                 new_clothe_cls_score = clothe_base.clothe_classifier(global_bn_feat)
                 global_clothe_adv_loss = clothe_base.criterion_adv(new_clothe_cls_score, clotheid, clothe_base.pid2clothes[pid])
