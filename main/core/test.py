@@ -11,10 +11,10 @@ from util import CatMeter, re_ranking, time_now
 
 def get_data(dataset_loader, reid_net, device):
     with torch.no_grad():
-        feats_meter, pids_meter, camids_meter, clothesid_meter = CatMeter(), CatMeter(), CatMeter(), CatMeter()
+        feats_meter, pids_meter, camids_meter, clotheids_meter = CatMeter(), CatMeter(), CatMeter(), CatMeter()
         for batch_idx, data in enumerate(tqdm(dataset_loader)):
-            img, pid, camid, clothesid = data
-            img, pid, camid, clothesid = img.to(device), pid.to(device), camid.to(device), clothesid.to(device)
+            img, pid, camid, clotheid = data
+            img, pid, camid, clotheid = img.to(device), pid.to(device), camid.to(device), clotheid.to(device)
 
             # 原始特征
             bn_features = reid_net(img)
@@ -28,14 +28,14 @@ def get_data(dataset_loader, reid_net, device):
             feats_meter.update(bn_features.data)
             pids_meter.update(pid)
             camids_meter.update(camid)
-            clothesid_meter.update(clothesid)
+            clotheids_meter.update(clotheid)
 
     feats = feats_meter.get_val_numpy()
     pids = pids_meter.get_val_numpy()
     camids = camids_meter.get_val_numpy()
-    clothes_id = clothesid_meter.get_val_numpy()
+    clotheids = clotheids_meter.get_val_numpy()
 
-    return feats, pids, camids, clothes_id
+    return feats, pids, camids, clotheids
 
 
 def cosine_dist(x, y):
