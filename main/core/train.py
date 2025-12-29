@@ -17,7 +17,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             total_loss = 0
 
             # backbone_feat_map = reid_net(img)
-            backbone_feat_map, black_feat_map = reid_net(torch.cat((img, black_img), dim=0)).split(img.size(0), dim=0)
+            backbone_feat_map, black_feat_map = reid_net(torch.cat((img, black_img), dim=0)).split(B, dim=0)
 
             global_feat = reid_net.global_pool(backbone_feat_map).view(B, reid_net.GLOBAL_DIM)
             global_bn_feat, global_cls_score = reid_net.global_classifier(global_feat)
