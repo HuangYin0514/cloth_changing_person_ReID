@@ -1,7 +1,10 @@
 import math
 import random
 
+import numpy as np
+import torch
 from PIL import Image
+from torchvision.transforms import *
 
 
 class ResizeWithEqualScale(object):
@@ -58,7 +61,7 @@ class RandomCroping(object):
             PIL Image: Cropped image.
         """
         width, height = img.size
-        if random.uniform(0, 1) >= self.p:
+        if np.random.uniform(0, 1) >= self.p:
             return img
 
         new_width, new_height = int(round(width * 1.125)), int(round(height * 1.125))
@@ -72,16 +75,27 @@ class RandomCroping(object):
         return croped_img
 
 
+class Convert_ToTensor(object):
+
+    def __init__(self): ...
+
+    def __call__(self, img):
+        return torch.tensor(np.asarray(img, dtype=np.uint8))
+
+
 class RandomErasing(object):
-    """Randomly selects a rectangle region in an image and erases its pixels.
-        'Random Erasing Data Augmentation' by Zhong et al.
-        See https://arxiv.org/pdf/1708.04896.pdf
+    """
+    Randomly selects a rectangle region in an image and erases its pixels.
+
+    Reference:
+        Zhong et al. Random Erasing Data Augmentation. arxiv: 1708.04896, 2017.
+
     Args:
-         probability: The probability that the Random Erasing operation will be performed.
-         sl: Minimum proportion of erased area against input image.
-         sh: Maximum proportion of erased area against input image.
-         r1: Minimum aspect ratio of erased area.
-         mean: Erasing value.
+        probability: The probability that the Random Erasing operation will be performed.
+        sl: Minimum proportion of erased area against input image.
+        sh: Maximum proportion of erased area against input image.
+        r1: Minimum aspect ratio of erased area.
+        mean: Erasing value.
     """
 
     def __init__(self, probability=0.5, sl=0.02, sh=0.4, r1=0.3, mean=[0.4914, 0.4822, 0.4465]):
@@ -93,7 +107,7 @@ class RandomErasing(object):
 
     def __call__(self, img):
 
-        if random.uniform(0, 1) > self.probability:
+        if np.random.uniform(0, 1) >= self.probability:
             return img
 
         for attempt in range(100):

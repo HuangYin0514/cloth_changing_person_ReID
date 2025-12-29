@@ -25,9 +25,9 @@ class ReID_Net(nn.Module):
         self.global_pool = GeneralizedMeanPoolingP()
         self.global_classifier = Classifier(self.GLOBAL_DIM, n_class)
 
-        # ------------- Global -----------------------
-        self.mask_pool = GeneralizedMeanPoolingP()
-        self.mask_classifier = Classifier(self.GLOBAL_DIM, n_class)
+        # ------------- Black -----------------------
+        self.black_pool = GeneralizedMeanPoolingP()
+        self.black_classifier = Classifier(self.GLOBAL_DIM, n_class)
 
     def heatmap(self, img):
         B, C, H, W = img.shape

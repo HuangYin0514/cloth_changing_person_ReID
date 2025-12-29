@@ -1,12 +1,14 @@
 import copy
 import os.path as osp
+import random
 
 import numpy as np
 import torch
 import torch.nn.functional as F
-import torchvision.transforms as T
 from PIL import Image
 from torch.utils.data import Dataset
+
+from . import image_transforms as T
 
 
 def read_image(img_path):
@@ -25,6 +27,22 @@ def read_image(img_path):
     return img
 
 
+# def read_mask_image(img_path):
+#     """Keep reading image until succeed.
+#     This can avoid IOError incurred by heavy IO process."""
+#     got_img = False
+#     if not osp.exists(img_path):
+#         raise IOError("{} does not exist".format(img_path))
+#     while not got_img:
+#         try:
+#             img = Image.open(img_path).convert("L")
+#             got_img = True
+#         except IOError:
+#             print("IOError incurred when reading '{}'. Will redo. Don't worry. Just chill.".format(img_path))
+#             pass
+#     return img
+
+
 def read_mask_image(img_path):
     """Keep reading image until succeed.
     This can avoid IOError incurred by heavy IO process."""
@@ -33,7 +51,7 @@ def read_mask_image(img_path):
         raise IOError("{} does not exist".format(img_path))
     while not got_img:
         try:
-            img = Image.open(img_path).convert("L")
+            img = Image.open(img_path)
             got_img = True
         except IOError:
             print("IOError incurred when reading '{}'. Will redo. Don't worry. Just chill.".format(img_path))
@@ -63,39 +81,69 @@ class ImageDataset_Img_Mask(Dataset):
         self.dataset = dataset
         self.transform = transform
 
-        self.mask_transform = T.Compose(
+    def __len__(self):
+        return len(self.dataset)
+
+    def __get_transform(self, index):
+        p1 = random.randint(0, 1)
+        p2 = random.randint(0, 1)
+        p3 = random.randint(0, 1)
+
+        transform = T.Compose(
             [
                 T.Resize((384, 192)),
-                Convert_To_Tensor(),  # 避免数值归一化
+                T.RandomCroping(p=p1),
+                T.RandomHorizontalFlip(p=p2),
+                T.ToTensor(),
+                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                T.RandomErasing(probability=p3),
             ]
         )
 
-    def __len__(self):
-        return len(self.dataset)
+        transform_black = T.Compose(
+            [
+                T.Resize((384, 192)),
+                T.RandomCroping(p=p1),
+                T.RandomHorizontalFlip(p=p2),
+                T.ToTensor(),
+                T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+                T.RandomErasing(probability=p3),
+            ]
+        )
+
+        # transform_parsing = T.Compose(
+        #     [
+        #         T.Resize((384, 192)),
+        #         T.Convet_ToTensor(),
+        #     ]
+        # )
+        return transform, transform_black
 
     def __getitem__(self, index):
         img_path, pid, camid, clothes_id = self.dataset[index]
         img = read_image(img_path)
 
+        transform, transform_black = self.__get_transform(index)
+
         if "LTCC" in img_path:
-            # mask image
+            # 遮罩图像
             root_dir = osp.dirname(osp.dirname(osp.dirname(img_path)))
-            mode_dir = osp.basename(osp.dirname(img_path))
             file_name = osp.basename(img_path)
-            mask_path = osp.join(root_dir, "hp", mode_dir, file_name)
+            mask_path = osp.join(root_dir, "processed", file_name)
             mask_img = read_mask_image(mask_path)
 
+        # 构造黑衣图
         img_np = np.asarray(img, dtype=np.uint8)
         mask_img_np = np.asarray(mask_img, dtype=np.uint8)
-        black_img = np.zeros_like(img_np)
-        black_img[mask_img_np != 0] = img_np[mask_img_np != 0]
-        # plot_and_save_multi_np_images(img_np, mask_img_np, black_img)
+        black_img = img_np.copy()
+        black_img[np.isin(mask_img_np, [2, 3, 4, 5, 6, 7, 10, 11])] = 0
         black_img = Image.fromarray(black_img, mode="RGB")
 
-        if self.transform is not None:
-            img = self.transform(img)
-            black_img = self.transform(black_img)
+        if transform is not None and transform_black is not None:
+            img = transform(img)
+            black_img = transform_black(black_img)
 
+        # 测试画图
         # plot_and_save_multi_np_images(tensor_2_image(img), tensor_2_image(black_img))
 
         return img, black_img, pid, camid, clothes_id
