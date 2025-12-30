@@ -28,18 +28,6 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             meter.update({"global_loss": global_loss.item()})
             total_loss += global_loss
 
-            # ------------- Mask Attention -----------------------
-            mask_att_feat_map = reid_net.mask_attention(backbone_feat_map)
-            mask_feat_map = mask_att_feat_map[:, 0, :, :].unsqueeze(dim=1) * backbone_feat_map
-            mask_feat = reid_net.mask_pool(mask_feat_map).view(B, reid_net.GLOBAL_DIM)
-            mask_bn_feat, mask_cls_score = reid_net.mask_classifier(mask_feat)
-            match_mask_loss = criterion.match_mask(mask_att_feat_map, mask_img)
-            mask_id_loss = criterion.ce_ls(mask_cls_score, pid)
-            mask_tri_loss = criterion.tri(mask_feat, pid)
-            mask_loss = mask_id_loss + mask_tri_loss + 0.0 * match_mask_loss
-            meter.update({"mask_loss": mask_loss.item()})
-            total_loss += mask_loss
-
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()
