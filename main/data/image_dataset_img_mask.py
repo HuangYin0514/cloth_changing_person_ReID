@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 from torch.utils.data import Dataset
+from torchvision.transforms import InterpolationMode
 
 from . import image_transforms as T
 
@@ -57,6 +58,13 @@ class ImageDataset_Img_Mask(Dataset):
         self.dataset = dataset
         self.transform = transform
 
+        self.transform_mask = T.Compose(
+            [
+                T.Resize((384, 192)),
+                T.Convert_ToTensor(),
+            ]
+        )
+
     def __len__(self):
         return len(self.dataset)
 
@@ -64,7 +72,7 @@ class ImageDataset_Img_Mask(Dataset):
         img_path, pid, camid, clothes_id = self.dataset[index]
         img = read_image(img_path)
         if self.transform is not None:
-            trans_img = self.transform(img)
+            img = self.transform(img)
 
         if "LTCC" in img_path:
             # 遮罩图像
@@ -72,22 +80,32 @@ class ImageDataset_Img_Mask(Dataset):
             file_name = osp.basename(img_path)
             mask_path = osp.join(root_dir, "processed", file_name)
             mask_img = read_mask_image(mask_path)
+            if self.transform_mask is not None:
+                mask_img = self.transform_mask(mask_img)
+                mask_img = (
+                    F.interpolate(
+                        mask_img.unsqueeze(0).unsqueeze(0),
+                        size=(24, 12),
+                        mode="nearest",
+                        align_corners=None,
+                    )
+                    .squeeze(0)
+                    .squeeze(0)
+                )
 
-            # 构造黑衣图
-            img_np = np.asarray(img, dtype=np.uint8)
-            mask_img_np = np.asarray(mask_img, dtype=np.uint8)
-            black_img = img_np.copy()
-            black_img[np.isin(mask_img_np, [2, 3, 4, 5, 6, 7, 10, 11])] = 0
-            black_img = Image.fromarray(black_img, mode="RGB")
-
-            # 数据增强
-            if self.transform is not None:
-                trans_black_img = self.transform(black_img)
+            # # 构造黑衣图
+            # img_np = np.asarray(img, dtype=np.uint8)
+            # mask_img_np = np.asarray(mask_img, dtype=np.uint8)
+            # black_img = img_np.copy()
+            # black_img[np.isin(mask_img_np, [2, 3, 4, 5, 6, 7, 10, 11])] = 0
+            # black_img = Image.fromarray(black_img, mode="RGB")
+            # if self.transform is not None:
+            #     trans_black_img = self.transform(black_img)
 
         # 测试画图
-        # plot_and_save_multi_np_images(tensor_2_image(trans_img), tensor_2_image(trans_black_img))
+        # plot_and_save_multi_np_images(tensor_2_image(img), mask_img.cpu().numpy())
 
-        return trans_img, trans_black_img, pid, camid, clothes_id
+        return img, mask_img, pid, camid, clothes_id
 
 
 def plot_and_save_multi_np_images(*imgs, file_format: str = "png"):
