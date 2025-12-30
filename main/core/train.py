@@ -36,7 +36,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             match_mask_loss = criterion.match_mask(mask_att_feat_map, mask_img)
             mask_id_loss = criterion.ce_ls(mask_cls_score, pid)
             mask_tri_loss = criterion.tri(mask_feat, pid)
-            mask_loss = mask_id_loss + mask_tri_loss + match_mask_loss
+            mask_loss = mask_id_loss + mask_tri_loss + 0.01 * match_mask_loss
             meter.update({"mask_loss": mask_loss.item()})
             total_loss += mask_loss
 
