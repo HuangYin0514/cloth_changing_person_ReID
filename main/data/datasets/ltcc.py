@@ -15,7 +15,7 @@ class LTCC(object):
     URL: https://naiq.github.io/LTCC_Perosn_ReID.html#
     """
 
-    dataset_dir = ""
+    dataset_dir = "rgb"
 
     def __init__(self, root="data", **kwargs):
         self.dataset_dir = osp.join(root, self.dataset_dir)
