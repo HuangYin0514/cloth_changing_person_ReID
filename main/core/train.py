@@ -14,11 +14,10 @@ def train(config, reid_net, clothe_base, train_loader, criterion, optimizer, sch
             B = img.size(0)
             total_loss = 0
 
-            backbone_feat_map = reid_net(img)
+            backbone_feat_map, global_feat, global_bn_feat = reid_net(img)
 
             # Global
-            global_feat = reid_net.global_pool(backbone_feat_map).view(B, reid_net.GLOBAL_DIM)
-            global_bn_feat, global_cls_score = reid_net.global_classifier(global_feat)
+            global_cls_score = reid_net.global_classifier(global_bn_feat)
             global_id_loss = criterion.ce_ls(global_cls_score, pid)
             # global_tri_loss = criterion.tri(global_feat, pid)
             global_loss = global_id_loss

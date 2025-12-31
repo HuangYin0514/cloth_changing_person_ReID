@@ -3,6 +3,7 @@ from sympy import im
 from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
+from torch.nn import init
 
 from .weights_init import weights_init_classifier, weights_init_kaiming
 
@@ -27,6 +28,18 @@ class Classifier(nn.Module):
         bn_features = self.bottleneck(features.squeeze())
         cls_score = self.classifier(bn_features)
         return bn_features, cls_score
+
+
+class CC_Classifier(nn.Module):
+    def __init__(self, feature_dim, num_classes):
+        super().__init__()
+        self.classifier = nn.Linear(feature_dim, num_classes)
+        init.normal_(self.classifier.weight.data, std=0.001)
+        init.constant_(self.classifier.bias.data, 0.0)
+
+    def forward(self, x):
+        y = self.classifier(x)
+        return y
 
 
 class NormalizedClassifier(nn.Module):

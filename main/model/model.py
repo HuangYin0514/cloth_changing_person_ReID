@@ -1,10 +1,13 @@
 import copy
 
+import torch
 import torch.nn as nn
 import util
+from torch.nn import init
 
-from .classifier import Classifier
+from .classifier import CC_Classifier, Classifier
 from .gem_pool import GeneralizedMeanPoolingP
+from .module_main import MaxAvgPooling
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
 from .weights_init import weights_init_classifier, weights_init_kaiming
@@ -22,9 +25,12 @@ class ReID_Net(nn.Module):
         self.backbone = Backbone(BACKBONE_TYPE)
 
         # ------------- Global -----------------------
-        self.GLOBAL_DIM = 2048
-        self.global_pool = GeneralizedMeanPoolingP()
-        self.global_classifier = Classifier(self.GLOBAL_DIM, n_class)
+        self.GLOBAL_DIM = 4096
+        self.global_pool = MaxAvgPooling()
+        self.global_bn = nn.BatchNorm1d(self.GLOBAL_DIM)
+        init.normal_(self.global_bn.weight.data, 1.0, 0.02)
+        init.constant_(self.global_bn.bias.data, 0.0)
+        self.global_classifier = CC_Classifier(self.GLOBAL_DIM, n_class)
 
     def heatmap(self, img):
         B, C, H, W = img.shape
@@ -34,18 +40,19 @@ class ReID_Net(nn.Module):
     def forward(self, img):
         B, C, H, W = img.shape
 
+        # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
+        global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
+        global_bn_feat = self.global_bn(global_feat)
 
         if self.training:
-            return backbone_feat_map
+            return backbone_feat_map, global_feat, global_bn_feat
         else:
-            eval_feat_meter = util.CatMeter()
+            eval_feat_meter = []
             # ------------- Global -----------------------
-            global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
-            global_bn_feat, global_cls_score = self.global_classifier(global_feat)
-            eval_feat_meter.update(global_bn_feat)
+            eval_feat_meter.append(global_bn_feat)
 
-            eval_feat = eval_feat_meter.get_val()
+            eval_feat = torch.cat(eval_feat_meter, dim=1)
             return eval_feat
 
 
