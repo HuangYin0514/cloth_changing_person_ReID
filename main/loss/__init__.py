@@ -1,3 +1,3 @@
 from .ce_label_smooth import CrossEntropyLabelSmooth
-from .match_mask import MatchMask
+from .cosface_loss import CosFaceLoss
 from .triplet_loss import TripletLoss

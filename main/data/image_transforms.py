@@ -1,43 +1,7 @@
 import math
 import random
 
-import numpy as np
-import torch
 from PIL import Image
-from torchvision.transforms import *
-
-
-class ResizeWithEqualScale(object):
-    """
-    Resize an image with equal scale as the original image.
-
-    Args:
-        height (int): resized height.
-        width (int): resized width.
-        interpolation: interpolation manner.
-        fill_color (tuple): color for padding.
-    """
-
-    def __init__(self, height, width, interpolation=Image.BILINEAR, fill_color=(0, 0, 0)):
-        self.height = height
-        self.width = width
-        self.interpolation = interpolation
-        self.fill_color = fill_color
-
-    def __call__(self, img):
-        width, height = img.size
-        if self.height / self.width >= height / width:
-            height = int(self.width * (height / width))
-            width = self.width
-        else:
-            width = int(self.height * (width / height))
-            height = self.height
-
-        resized_img = img.resize((width, height), self.interpolation)
-        new_img = Image.new("RGB", (self.width, self.height), self.fill_color)
-        new_img.paste(resized_img, (int((self.width - width) / 2), int((self.height - height) / 2)))
-
-        return new_img
 
 
 class RandomCroping(object):
@@ -61,7 +25,7 @@ class RandomCroping(object):
             PIL Image: Cropped image.
         """
         width, height = img.size
-        if np.random.uniform(0, 1) >= self.p:
+        if random.uniform(0, 1) >= self.p:
             return img
 
         new_width, new_height = int(round(width * 1.125)), int(round(height * 1.125))
@@ -73,14 +37,6 @@ class RandomCroping(object):
         croped_img = resized_img.crop((x1, y1, x1 + width, y1 + height))
 
         return croped_img
-
-
-class Convert_ToTensor(object):
-
-    def __init__(self): ...
-
-    def __call__(self, img):
-        return torch.tensor(np.asarray(img, dtype=np.uint8))
 
 
 class RandomErasing(object):
@@ -107,7 +63,7 @@ class RandomErasing(object):
 
     def __call__(self, img):
 
-        if np.random.uniform(0, 1) >= self.probability:
+        if random.uniform(0, 1) >= self.probability:
             return img
 
         for attempt in range(100):

@@ -3,8 +3,7 @@ from torch.utils.data import DataLoader
 
 from .datasets import LTCC
 from .image_dataset import ImageDataset
-from .image_dataset_img_mask import ImageDataset_Img_Mask
-from .image_transforms import RandomErasing
+from .image_transforms import RandomCroping, RandomErasing
 from .samplers import RandomIdentitySampler_cc
 
 
@@ -12,12 +11,12 @@ def build_img_transforms(config):
     transform_train = T.Compose(
         [
             T.Resize((config.DATA.IMAGE_HEIGHT, config.DATA.IMAGE_WIDTH)),
+            RandomCroping(p=0.5),
             T.RandomHorizontalFlip(p=0.5),
             T.Pad(padding=10),
-            T.RandomCrop((config.DATA.IMAGE_HEIGHT, config.DATA.IMAGE_WIDTH)),
             T.ToTensor(),
             T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            RandomErasing(probability=0.5, mean=[0.0, 0.0, 0.0]),
+            RandomErasing(probability=0.5),
         ]
     )
     transform_test = T.Compose(
@@ -40,7 +39,7 @@ def build_dataloader(config):
     if config.DATA.TRAIN_DATASET == "ltcc":
         dataset = LTCC(root=config.DATA.TRAIN_ROOT)
 
-        train_dataset = ImageDataset_Img_Mask(dataset.train, transform=transform_train)
+        train_dataset = ImageDataset(dataset.train, transform=transform_train)
         query_dataset = ImageDataset(dataset.query, transform=transform_test)
         gallery_dataset = ImageDataset(dataset.gallery, transform=transform_test)
 

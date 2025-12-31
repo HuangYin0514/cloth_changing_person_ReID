@@ -2,13 +2,12 @@ import copy
 
 import torch.nn as nn
 import util
-from sympy import im
 
 from .classifier import Classifier
 from .gem_pool import GeneralizedMeanPoolingP
-from .module_main import Part_Block
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
+from .weights_init import weights_init_classifier, weights_init_kaiming
 
 
 class ReID_Net(nn.Module):
@@ -26,11 +25,6 @@ class ReID_Net(nn.Module):
         self.GLOBAL_DIM = 2048
         self.global_pool = GeneralizedMeanPoolingP()
         self.global_classifier = Classifier(self.GLOBAL_DIM, n_class)
-
-        # ------------- Mask attention -----------------------
-        self.mask_attention = Part_Block()
-        self.mask_pool = GeneralizedMeanPoolingP()
-        self.mask_classifier = Classifier(self.GLOBAL_DIM, n_class)
 
     def heatmap(self, img):
         B, C, H, W = img.shape
