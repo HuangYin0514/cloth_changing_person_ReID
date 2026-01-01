@@ -36,26 +36,21 @@ class Linear_Classifier(nn.Module):
         return cls_score
 
 
-class BN_Classifier(nn.Module):
+class BNNeck_Classifier(nn.Module):
     """
-    BN -> Classifier
+    BN_Neck -> Classifier
     """
 
     def __init__(self, c_dim, pid_num):
-        super(BN_Classifier, self).__init__()
+        super(BNNeck_Classifier, self).__init__()
         self.pid_num = pid_num
+        self.bn_neck = BN_Neck(c_dim)
+        self.Learn_classifier = Linear_Classifier(c_dim, self.pid_num)
 
-        self.bottleneck = nn.BatchNorm1d(c_dim)
-        self.bottleneck.bias.requires_grad_(False)  # no shift
-        self.bottleneck.apply(weights_init_kaiming)
-
-        self.classifier = nn.Linear(c_dim, self.pid_num, bias=False)
-        self.classifier.apply(weights_init_classifier)
-
-    def forward(self, features):
-        bn_features = self.bottleneck(features.squeeze())
-        cls_score = self.classifier(bn_features)
-        return bn_features, cls_score
+    def forward(self, feat):
+        bn_feat = self.bn_neck(feat)
+        cls_score = self.classifier(bn_feat)
+        return cls_score
 
 
 class CC_Classifier(nn.Module):
