@@ -5,7 +5,6 @@ import warnings
 
 import torch
 import util
-from build_clothes_base import Build_Clothe_BASE
 from build_criterion import Build_Criterion
 from build_optimizer import Build_Optimizer
 from build_scheduler import Build_Scheduler
@@ -65,14 +64,12 @@ def run(config):
     scheduler = Build_Scheduler(config, optimizer).scheduler
     logger("Scheduler:\t {}".format(scheduler))
 
-    clothe_base = Build_Clothe_BASE(config, reid_net.GLOBAL_DIM, dataset.num_train_clothes, dataset.pid2clothes, device)
-
     ######################################################################
     # Training & Evaluation
     # 初始化最佳指标
     best_epoch, best_mAP, best_rank1 = 0, 0, 0
     for epoch in range(0, config.OPTIMIZER.TOTAL_TRAIN_EPOCH):
-        meter = train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch, logger, clothe_base)
+        meter = train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch, logger)
         logger("Time: {}; Epoch: {}; {}".format(util.time_now(), epoch, meter.get_str()))
         wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
 
@@ -82,8 +79,9 @@ def run(config):
             mAP, CMC = test(config, reid_net, query_loader, gallery_loader, device, logger)
             logger("reid time:\t {:.3f}s".format(time.time() - end))
 
-            is_best_rank_flag = CMC[0] >= best_rank1
-            if is_best_rank_flag:
+            # is_best_rank_flag = CMC[0] >= best_rank1
+            is_best_map_flag = mAP >= best_mAP
+            if is_best_map_flag:
                 best_epoch = epoch
                 best_rank1 = CMC[0]
                 best_mAP = mAP
