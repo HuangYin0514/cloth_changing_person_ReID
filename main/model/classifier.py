@@ -45,7 +45,7 @@ class BNNeck_Classifier(nn.Module):
         super(BNNeck_Classifier, self).__init__()
         self.pid_num = pid_num
         self.bn_neck = BN_Neck(c_dim)
-        self.Learn_classifier = Linear_Classifier(c_dim, self.pid_num)
+        self.classifier = Linear_Classifier(c_dim, self.pid_num)
 
     def forward(self, feat):
         bn_feat = self.bn_neck(feat)
