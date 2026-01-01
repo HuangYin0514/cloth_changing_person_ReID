@@ -25,7 +25,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             meter.update({"global_loss": global_loss.item()})
             total_loss += global_loss
 
-            if epoch > -1:
+            if epoch > 25:
                 clothe_cls_score = clothe_base.clothe_classifier_net(backbone_feat_map.detach())
                 clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)
                 meter.update({"clothe_loss": clothe_loss.item()})
