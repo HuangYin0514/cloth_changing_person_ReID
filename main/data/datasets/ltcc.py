@@ -15,7 +15,7 @@ class LTCC(object):
     URL: https://naiq.github.io/LTCC_Perosn_ReID.html#
     """
 
-    dataset_dir = "rgb/"
+    dataset_dir = "rgb"
 
     def __init__(self, root="data", **kwargs):
         self.dataset_dir = osp.join(root, self.dataset_dir)
@@ -52,8 +52,6 @@ class LTCC(object):
 
         self.num_train_pids = num_train_pids
         self.num_train_clothes = num_train_clothes
-        print(self.num_train_clothes)
-        print("00" * 100)
         self.pid2clothes = pid2clothes
 
     def _check_before_run(self):
@@ -71,7 +69,7 @@ class LTCC(object):
         img_paths = glob.glob(osp.join(dir_path, "*.png"))
         img_paths.sort()
         pattern1 = re.compile(r"(\d+)_(\d+)_c(\d+)")
-        pattern2 = re.compile(r"(\w+)_c")
+        pattern2 = re.compile(r"(\d+_\d+)_c(\d+)")
 
         pid_container = set()
         clothes_container = set()
@@ -109,7 +107,7 @@ class LTCC(object):
         query_img_paths.sort()
         gallery_img_paths.sort()
         pattern1 = re.compile(r"(\d+)_(\d+)_c(\d+)")
-        pattern2 = re.compile(r"(\w+)_c")
+        pattern2 = re.compile(r"(\d+_\d+)_c(\d+)")
 
         pid_container = set()
         clothes_container = set()
