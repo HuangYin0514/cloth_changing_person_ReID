@@ -1,16 +1,11 @@
-import copy
-
 import torch
 import torch.nn as nn
-import util
-from torch.nn import init
 
 from .classifier import BN_Neck, Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
-from .module_main import MaxAvgPooling
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
-from .weights_init import weights_init_classifier, weights_init_kaiming
+from .weights_init import weights_init_kaiming
 
 
 class ReID_Net(nn.Module):

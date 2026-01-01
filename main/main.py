@@ -5,7 +5,6 @@ import warnings
 
 import torch
 import util
-from build_clothes_base import Build_Clothe_BASE
 from build_criterion import Build_Criterion
 from build_optimizer import Build_Optimizer
 from build_scheduler import Build_Scheduler
