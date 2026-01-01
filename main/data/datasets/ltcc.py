@@ -53,6 +53,7 @@ class LTCC(object):
         self.num_train_pids = num_train_pids
         self.num_train_clothes = num_train_clothes
         print(self.num_train_clothes)
+        print("00" * 100)
         self.pid2clothes = pid2clothes
 
     def _check_before_run(self):
