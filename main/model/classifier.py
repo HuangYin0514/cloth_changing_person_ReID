@@ -8,13 +8,41 @@ from torch.nn import init
 from .weights_init import weights_init_classifier, weights_init_kaiming
 
 
-class Classifier(nn.Module):
+class BN_Neck(nn.Module):
+
+    def __init__(self, c_dim):
+        super(BN_Neck, self).__init__()
+
+        self.bn_neck = nn.BatchNorm1d(c_dim)
+        self.bn_neck.bias.requires_grad_(False)  # no shift
+        self.bn_neck.apply(weights_init_kaiming)
+
+    def forward(self, feat):
+        bn_feat = self.bn_neck(feat)
+        return bn_feat
+
+
+class Linear_Classifier(nn.Module):
+
+    def __init__(self, c_dim, pid_num):
+        super(Linear_Classifier, self).__init__()
+        self.pid_num = pid_num
+
+        self.classifier = nn.Linear(c_dim, self.pid_num, bias=False)
+        self.classifier.apply(weights_init_classifier)
+
+    def forward(self, feat):
+        cls_score = self.classifier(feat)
+        return cls_score
+
+
+class BN_Classifier(nn.Module):
     """
     BN -> Classifier
     """
 
     def __init__(self, c_dim, pid_num):
-        super(Classifier, self).__init__()
+        super(BN_Classifier, self).__init__()
         self.pid_num = pid_num
 
         self.bottleneck = nn.BatchNorm1d(c_dim)

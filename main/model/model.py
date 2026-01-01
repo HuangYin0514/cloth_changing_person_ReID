@@ -5,7 +5,7 @@ import torch.nn as nn
 import util
 from torch.nn import init
 
-from .classifier import CC_Classifier, Classifier
+from .classifier import BN_Neck, Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
 from .module_main import MaxAvgPooling
 from .resnet import resnet50
@@ -15,7 +15,7 @@ from .weights_init import weights_init_classifier, weights_init_kaiming
 
 class ReID_Net(nn.Module):
 
-    def __init__(self, config, n_class):
+    def __init__(self, config, pid_num):
         super(ReID_Net, self).__init__()
         self.config = config
 
@@ -25,17 +25,15 @@ class ReID_Net(nn.Module):
         self.backbone = Backbone(BACKBONE_TYPE)
 
         # ------------- Global -----------------------
-        self.GLOBAL_DIM = 4096
-        self.global_pool = MaxAvgPooling()
-        self.global_bn = nn.BatchNorm1d(self.GLOBAL_DIM)
-        init.normal_(self.global_bn.weight.data, 1.0, 0.02)
-        init.constant_(self.global_bn.bias.data, 0.0)
-        self.global_classifier = CC_Classifier(self.GLOBAL_DIM, n_class)
+        self.GLOBAL_DIM = 2048
+        self.global_pool = GeneralizedMeanPoolingP()
+        self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
+        self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, pid_num)
 
-    def heatmap(self, img):
-        B, C, H, W = img.shape
-        backbone_feat_map = self.backbone(img)
-        return backbone_feat_map
+    # def heatmap(self, img):
+    #     B, C, H, W = img.shape
+    #     backbone_feat_map = self.backbone(img)
+    #     return backbone_feat_map
 
     def forward(self, img):
         B, C, H, W = img.shape
@@ -43,7 +41,7 @@ class ReID_Net(nn.Module):
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
-        global_bn_feat = self.global_bn(global_feat)
+        global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
             return backbone_feat_map, global_feat, global_bn_feat
