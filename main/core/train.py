@@ -2,9 +2,10 @@ import util
 from tqdm import tqdm
 
 
-def train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch, logger):
+def train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch, logger, clothe_base):
     scheduler.step(epoch)
     reid_net.train()
+    clothe_base.clothe_classifier_net.train()
     meter = util.MultiItemAverageMeter()
     for epoch, data in enumerate(tqdm(train_loader)):
         img, pid, camid, clotheid = data
@@ -23,6 +24,14 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             global_loss = global_id_loss + global_tri_loss
             meter.update({"global_loss": global_loss.item()})
             total_loss += global_loss
+
+            if epoch > -1:
+                clothe_cls_score = clothe_base.clothe_classifier_net(backbone_feat_map.detach())
+                clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)
+                meter.update({"clothe_loss": clothe_loss.item()})
+                clothe_base.optimizer.zero_grad()
+                clothe_loss.backward()
+                clothe_base.optimizer.step()
 
             optimizer.zero_grad()
             total_loss.backward()
