@@ -11,7 +11,6 @@ from build_scheduler import Build_Scheduler
 from core import test, train
 from data import build_dataloader
 from model import ReID_Net
-from sympy import im
 
 import wandb
 

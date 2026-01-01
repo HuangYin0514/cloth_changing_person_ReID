@@ -1,7 +1,8 @@
 from bisect import bisect_right
 
 import torch
-from torch.optim import lr_scheduler
+import torch.nn as nn
+import torch.optim as optim
 
 
 class Build_Scheduler:
@@ -11,14 +12,6 @@ class Build_Scheduler:
 
     def build(self, config, optimizer):
         self.scheduler = None
-
-        if config.SCHEDULER.NAME == "MultiStepLR":
-
-            self.scheduler = lr_scheduler.MultiStepLR(
-                optimizer,
-                milestones=[20, 40],
-                gamma=0.1,
-            )
 
         if config.SCHEDULER.NAME == "WarmupMultiStepLR":
             self.scheduler = WarmupMultiStepLR(
@@ -34,28 +27,13 @@ class Build_Scheduler:
             self.scheduler = Adjust_Learning_Rate(config, optimizer)
 
 
-# FIXME ideally this would be achieved with a CombinedLRScheduler,
-# separating MultiStepLR with WarmupLR
-# but the current LRScheduler design doesn't allow it
 class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
-    def __init__(
-        self,
-        optimizer,
-        milestones,
-        gamma=0.1,
-        warmup_factor=0.01,
-        warmup_iters=10,
-        warmup_method="linear",
-        last_epoch=-1,
-    ):
+    def __init__(self, optimizer, milestones, gamma=0.1, warmup_factor=1.0 / 3, warmup_iters=500, warmup_method="linear", last_epoch=-1):
         if not list(milestones) == sorted(milestones):
-            raise ValueError(
-                "Milestones should be a list of" " increasing integers. Got {}",
-                milestones,
-            )
+            raise ValueError("Milestones should be a list of " " increasing integers. Got {}", milestones)
 
         if warmup_method not in ("constant", "linear"):
-            raise ValueError("Only 'constant' or 'linear' warmup_method accepted" "got {}".format(warmup_method))
+            raise ValueError("Only 'constant' or 'linear' warmup method accepted got {}".format(warmup_method))
         self.milestones = milestones
         self.gamma = gamma
         self.warmup_factor = warmup_factor
@@ -69,11 +47,19 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
             if self.warmup_method == "constant":
                 warmup_factor = self.warmup_factor
             elif self.warmup_method == "linear":
-                alpha = self.last_epoch / self.warmup_iters
+                alpha = float(self.last_epoch) / float(self.warmup_iters)
                 warmup_factor = self.warmup_factor * (1 - alpha) + alpha
-            elif self.warmup_method == "exp":  # add by wqz according to fastreid/solver/lr_scheduler.py
-                warmup_factor = self.warmup_factor ** (1 - self.last_epoch / self.warmup_iters)
         return [base_lr * warmup_factor * self.gamma ** bisect_right(self.milestones, self.last_epoch) for base_lr in self.base_lrs]
+
+    def __repr__(self):
+        return "{}(milestones={}, gamma={}, warmup_factor={}, warmup_iters={}, warmup_method={})".format(
+            self.__class__.__name__,
+            self.milestones,
+            self.gamma,
+            self.warmup_factor,
+            self.warmup_iters,
+            self.warmup_method,
+        )
 
 
 class Adjust_Learning_Rate:
