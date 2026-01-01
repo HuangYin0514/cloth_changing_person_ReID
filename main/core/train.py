@@ -20,6 +20,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             if epoch > 25:
                 clothe_cls_score = clothe_base.clothe_classifier(global_feat.detach())
                 clothe_loss = clothe_base.criterion_ce_ls(clothe_cls_score, clotheid)
+                meter.update({"clothe_loss": clothe_loss.item()})
                 clothe_base.optimizer.zero_grad()
                 clothe_loss.backward()
                 clothe_base.optimizer.step()
