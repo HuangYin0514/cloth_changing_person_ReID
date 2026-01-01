@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from loss import CosFaceLoss, CrossEntropyLabelSmooth
+from loss import CrossEntropyLabelSmooth
 from model import BNNeck_Classifier
 
 
@@ -28,4 +28,3 @@ class Build_Clothe_BASE:
 
         self.criterion_ce = nn.CrossEntropyLoss().to(device)
         self.criterion_ce_ls = CrossEntropyLabelSmooth(num_classes=num_clothe_pids, epsilon=0.1, use_gpu=torch.cuda.is_available())
-        self.criterion_cfl = CosFaceLoss(scale=16.0, margin=0).to(device)
