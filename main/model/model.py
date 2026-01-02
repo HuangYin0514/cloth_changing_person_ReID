@@ -5,6 +5,7 @@ from .bn_neck import BN_Neck
 from .cam import CAM
 from .classifier import Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
+from .part_module import Part_Module
 from .pool_attention import Pool_Attention
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
@@ -33,6 +34,17 @@ class ReID_Net(nn.Module):
         self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, pid_num)
 
+        # ------------- Bacbone inside -----------------------
+        self.backbone_l4_b0_pool = nn.AdaptiveMaxPool2d(1)
+        self.backbone_l4_b0_neck = BN_Neck(self.GLOBAL_DIM)
+        self.backbone_l4_b0_part_module = Part_Module(self.GLOBAL_DIM, 8, 128, pool_type="max")
+        self.backbone_l4_b0_classifier = Linear_Classifier(self.GLOBAL_DIM + 128 * 8, pid_num)
+
+        self.backbone_l4_b1_pool = nn.AdaptiveAvgPool2d(1)
+        self.backbone_l4_b1_neck = BN_Neck(self.GLOBAL_DIM)
+        self.backbone_l4_b1_part_module = Part_Module(self.GLOBAL_DIM, 8, 128, pool_type="avg")
+        self.backbone_l4_b1_classifier = Linear_Classifier(self.GLOBAL_DIM + 128 * 8, pid_num)
+
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
     #     backbone_feat_map = self.backbone(img)
@@ -42,12 +54,16 @@ class ReID_Net(nn.Module):
         B, C, H, W = img.shape
 
         # ------------- Global -----------------------
-        backbone_feat_map = self.backbone(img)
+        backbone_feat_map, backbone_l4_b0_feat_map, backbone_l4_b1_feat_map = self.backbone(img)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
-            return backbone_feat_map, global_feat, global_bn_feat
+            backbone_inside_feat_map = {
+                "backbone_l4_b0_feat_map": backbone_l4_b0_feat_map,
+                "backbone_l4_b1_feat_map": backbone_l4_b1_feat_map,
+            }
+            return backbone_feat_map, global_feat, global_bn_feat, backbone_inside_feat_map
         else:
             eval_feat_meter = []
             # ------------- Global -----------------------
@@ -91,8 +107,8 @@ class Backbone(nn.Module):
         self.layer4_1 = self.layer4[1]
         self.layer4_2 = self.layer4[2]
 
-        self.pool_att_1 = Pool_Attention(pool_type="max", feature_dim=2048)
-        self.pool_att_2 = Pool_Attention(pool_type="avg", feature_dim=2048)
+        self.pool_att_0 = Pool_Attention(pool_type="max", feature_dim=2048)
+        self.pool_att_1 = Pool_Attention(pool_type="avg", feature_dim=2048)
 
     def forward(self, img):
         out = self.layer0(img)
@@ -102,8 +118,10 @@ class Backbone(nn.Module):
         # out = self.layer4(out)
 
         out = self.layer4_0(out)
-        out = self.pool_att_1(out)
+        out = self.pool_att_0(out)
+        res_l4_b0 = out
         out = self.layer4_1(out)
-        out = self.pool_att_2(out)
+        out = self.pool_att_1(out)
+        res_l4_b1 = out
         out = self.layer4_2(out)
-        return out
+        return out, res_l4_b0, res_l4_b1
