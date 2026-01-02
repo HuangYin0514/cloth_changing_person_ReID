@@ -1,12 +1,13 @@
 import torch
 import torch.nn as nn
 
+from .bn_neck import BN_Neck
 from .cam import CAM
-from .classifier import BN_Neck, Linear_Classifier
+from .classifier import Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
+from .pool_attention import Pool_Attention
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
-from .weights_init import weights_init_kaiming
 
 
 class ReID_Net(nn.Module):
@@ -86,10 +87,23 @@ class Backbone(nn.Module):
         self.layer3 = resnet.layer3  # 6 blocks
         self.layer4 = resnet.layer4  # 3 blocks
 
+        self.layer4_0 = self.layer4[0]
+        self.layer4_1 = self.layer4[1]
+        self.layer4_2 = self.layer4[2]
+
+        self.pool_att_1 = Pool_Attention(pool_type="max", feature_dim=2048)
+        self.pool_att_2 = Pool_Attention(pool_type="avg", feature_dim=2048)
+
     def forward(self, img):
         out = self.layer0(img)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = self.layer4(out)
+        # out = self.layer4(out)
+
+        out = self.layer4_0(out)
+        out = self.pool_att_1(out)
+        out = self.layer4_1(out)
+        out = self.pool_att_2(out)
+        out = self.layer4_2(out)
         return out

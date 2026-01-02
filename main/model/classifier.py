@@ -1,25 +1,11 @@
 import torch
-from sympy import im
 from torch import nn
 from torch.nn import Parameter
 from torch.nn import functional as F
 from torch.nn import init
 
-from .weights_init import weights_init_classifier, weights_init_kaiming
-
-
-class BN_Neck(nn.Module):
-
-    def __init__(self, c_dim):
-        super(BN_Neck, self).__init__()
-
-        self.bn_neck = nn.BatchNorm1d(c_dim)
-        self.bn_neck.bias.requires_grad_(False)  # no shift
-        self.bn_neck.apply(weights_init_kaiming)
-
-    def forward(self, feat):
-        bn_feat = self.bn_neck(feat)
-        return bn_feat
+from .bn_neck import BN_Neck
+from .weights_init import weights_init_classifier
 
 
 class Linear_Classifier(nn.Module):
