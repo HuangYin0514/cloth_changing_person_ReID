@@ -35,15 +35,15 @@ class ReID_Net(nn.Module):
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, pid_num)
 
         # ------------- Bacbone inside -----------------------
-        self.backbone_l4_b0_pool = nn.AdaptiveMaxPool2d(1)
-        self.backbone_l4_b0_neck = BN_Neck(self.GLOBAL_DIM)
-        self.backbone_l4_b0_part_module = Part_Module(self.GLOBAL_DIM, 8, 256, pool_type="max")
-        self.backbone_l4_b0_classifier = Linear_Classifier(self.GLOBAL_DIM + 256 * 8, pid_num)
+        self.b_l4_b0_pool = nn.AdaptiveMaxPool2d(1)
+        self.b_l4_b0_neck = BN_Neck(self.GLOBAL_DIM)
+        self.b_l4_b0_part_module = Part_Module(self.GLOBAL_DIM, 8, 256, pool_type="max")
+        self.b_l4_b0_classifier = Linear_Classifier(self.GLOBAL_DIM + 256 * 8, pid_num)
 
-        self.backbone_l4_b1_pool = nn.AdaptiveAvgPool2d(1)
-        self.backbone_l4_b1_neck = BN_Neck(self.GLOBAL_DIM)
-        self.backbone_l4_b1_part_module = Part_Module(self.GLOBAL_DIM, 8, 256, pool_type="avg")
-        self.backbone_l4_b1_classifier = Linear_Classifier(self.GLOBAL_DIM + 256 * 8, pid_num)
+        self.b_l4_b1_pool = nn.AdaptiveAvgPool2d(1)
+        self.b_l4_b1_neck = BN_Neck(self.GLOBAL_DIM)
+        self.b_l4_b1_part_module = Part_Module(self.GLOBAL_DIM, 8, 256, pool_type="avg")
+        self.b_l4_b1_classifier = Linear_Classifier(self.GLOBAL_DIM + 256 * 8, pid_num)
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
