@@ -11,7 +11,7 @@ from .resnet_ibn_a import resnet50_ibn_a
 
 
 class Part_Module(nn.Module):
-    def __init__(self, c_dim=2048, part_num=8, part_dim=128, pool_type="avg"):
+    def __init__(self, c_dim=2048, part_num=8, part_dim=256, pool_type="avg"):
         super(Part_Module, self).__init__()
         self.c_dim = c_dim
         self.part_num = part_num
