@@ -24,39 +24,38 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             global_id_loss = criterion.ce_ls(global_cls_score, pid)
             meter.update({"global_id_loss": global_id_loss.item()})
             total_loss += global_id_loss
-            if epoch > start_epoch:
-                global_tri_loss = criterion.tri(global_feat, pid)
-                meter.update({"global_tri_loss": global_tri_loss.item()})
-                total_loss += global_tri_loss
+            global_tri_loss = criterion.tri(global_feat, pid)
+            meter.update({"global_tri_loss": global_tri_loss.item()})
+            total_loss += global_tri_loss
 
             # Backbone inside
-            backbone_l4_b0_feat_map = backbone_inside_feat_map["backbone_l4_b0_feat_map"]
-            backbone_l4_b0_feat = reid_net.backbone_l4_b0_pool(backbone_l4_b0_feat_map).view(B, reid_net.GLOBAL_DIM)
-            backbone_l4_b0_bn_feat = reid_net.backbone_l4_b0_neck(backbone_l4_b0_feat)
-            backbone_l4_b0_part_list = reid_net.backbone_l4_b0_part_module(backbone_l4_b0_feat_map)
-            backbone_l4_b0_g_p_feat = torch.cat([backbone_l4_b0_bn_feat, torch.cat(backbone_l4_b0_part_list, dim=1)], dim=1)
-            backbone_l4_b0_cls_score = reid_net.backbone_l4_b0_classifier(backbone_l4_b0_g_p_feat)
-            backbone_l4_b0_id_loss = criterion.ce_ls(backbone_l4_b0_cls_score, pid)
-            meter.update({"backbone_l4_b0_id_loss": backbone_l4_b0_id_loss.item()})
-            total_loss += backbone_l4_b0_id_loss
+            b_l4_b0_feat_map = backbone_inside_feat_map["backbone_l4_b0_feat_map"]
+            b_l4_b0_feat = reid_net.b_l4_b0_pool(b_l4_b0_feat_map).view(B, reid_net.GLOBAL_DIM)
+            b_l4_b0_bn_feat = reid_net.b_l4_b0_neck(b_l4_b0_feat)
+            b_l4_b0_part_list = reid_net.b_l4_b0_part_module(b_l4_b0_feat_map)
+            b_l4_b0_g_p_feat = torch.cat([b_l4_b0_bn_feat, torch.cat(b_l4_b0_part_list, dim=1)], dim=1)
+            b_l4_b0_cls_score = reid_net.b_l4_b0_classifier(b_l4_b0_g_p_feat)
+            b_l4_b0_id_loss = criterion.ce_ls(b_l4_b0_cls_score, pid)
+            meter.update({"b_l4_b0_id_loss": b_l4_b0_id_loss.item()})
+            total_loss += b_l4_b0_id_loss
             if epoch > start_epoch:
-                backbone_l4_b0_tri_loss = criterion.tri(backbone_l4_b0_feat, pid)
-                meter.update({"backbone_l4_b0_tri_loss": backbone_l4_b0_tri_loss.item()})
-                total_loss += backbone_l4_b0_tri_loss
+                b_l4_b0_tri_loss = criterion.tri(b_l4_b0_feat, pid)
+                meter.update({"b_l4_b0_tri_loss": b_l4_b0_tri_loss.item()})
+                total_loss += b_l4_b0_tri_loss
 
-            backbone_l4_b1_feat_map = backbone_inside_feat_map["backbone_l4_b1_feat_map"]
-            backbone_l4_b1_feat = reid_net.backbone_l4_b1_pool(backbone_l4_b1_feat_map).view(B, reid_net.GLOBAL_DIM)
-            backbone_l4_b1_bn_feat = reid_net.backbone_l4_b1_neck(backbone_l4_b1_feat)
-            backbone_l4_b1_part_list = reid_net.backbone_l4_b1_part_module(backbone_l4_b1_feat_map)
-            backbone_l4_b1_g_p_feat = torch.cat([backbone_l4_b1_bn_feat, torch.cat(backbone_l4_b1_part_list, dim=1)], dim=1)
-            backbone_l4_b1_cls_score = reid_net.backbone_l4_b1_classifier(backbone_l4_b1_g_p_feat)
-            backbone_l4_b1_id_loss = criterion.ce_ls(backbone_l4_b1_cls_score, pid)
-            meter.update({"backbone_l4_b1_id_loss": backbone_l4_b1_id_loss.item()})
-            total_loss += backbone_l4_b1_id_loss
+            b_l4_b1_feat_map = backbone_inside_feat_map["backbone_l4_b1_feat_map"]
+            b_l4_b1_feat = reid_net.b_l4_b1_pool(b_l4_b1_feat_map).view(B, reid_net.GLOBAL_DIM)
+            b_l4_b1_bn_feat = reid_net.b_l4_b1_neck(b_l4_b1_feat)
+            b_l4_b1_part_list = reid_net.b_l4_b1_part_module(b_l4_b1_feat_map)
+            b_l4_b1_g_p_feat = torch.cat([b_l4_b1_bn_feat, torch.cat(b_l4_b1_part_list, dim=1)], dim=1)
+            b_l4_b1_cls_score = reid_net.b_l4_b1_classifier(b_l4_b1_g_p_feat)
+            b_l4_b1_id_loss = criterion.ce_ls(b_l4_b1_cls_score, pid)
+            meter.update({"b_l4_b1_id_loss": b_l4_b1_id_loss.item()})
+            total_loss += b_l4_b1_id_loss
             if epoch > start_epoch:
-                backbone_l4_b1_tri_loss = criterion.tri(backbone_l4_b1_feat, pid)
-                meter.update({"backbone_l4_b1_tri_loss": backbone_l4_b1_tri_loss.item()})
-                total_loss += backbone_l4_b1_tri_loss
+                b_l4_b1_tri_loss = criterion.tri(b_l4_b1_feat, pid)
+                meter.update({"b_l4_b1_tri_loss": b_l4_b1_tri_loss.item()})
+                total_loss += b_l4_b1_tri_loss
 
             if epoch > -1:
                 clothe_cls_score = clothe_base.clothe_classifier_net(backbone_feat_map.detach())
@@ -74,10 +73,9 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
                 unclothe_cam_id_loss = criterion.ce_ls(unclothe_cam_cls_score, pid)
                 meter.update({"unclothe_cam_id_loss": unclothe_cam_id_loss.item()})
                 total_loss += unclothe_cam_id_loss
-                if epoch > start_epoch:
-                    unclothe_cam_tri_loss = criterion.tri(unclothe_cam_feat, pid)
-                    meter.update({"unclothe_cam_tri_loss": unclothe_cam_tri_loss.item()})
-                    total_loss += unclothe_cam_tri_loss
+                unclothe_cam_tri_loss = criterion.tri(unclothe_cam_feat, pid)
+                meter.update({"unclothe_cam_tri_loss": unclothe_cam_tri_loss.item()})
+                total_loss += unclothe_cam_tri_loss
 
             optimizer.zero_grad()
             total_loss.backward()

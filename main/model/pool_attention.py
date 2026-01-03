@@ -9,8 +9,6 @@ class Pool_Attention(nn.Module):
         self.pool_type = pool_type
         self.feature_dim = feature_dim
 
-        self.bn_neck = BN_Neck(feature_dim)
-
         if self.pool_type == "avg":
             self.pool = nn.AdaptiveAvgPool2d(1)
         if self.pool_type == "max":
