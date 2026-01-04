@@ -30,24 +30,18 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
 
             # Backbone inside
             b_l4_b0_feat_map = backbone_inside_feat_map["backbone_l4_b0_feat_map"]
-            # b_l4_b0_feat = reid_net.b_l4_b0_pool(b_l4_b0_feat_map).view(B, reid_net.GLOBAL_DIM)
-            # b_l4_b0_bn_feat = reid_net.b_l4_b0_neck(b_l4_b0_feat)
-            b_l4_b0_part_list = reid_net.b_l4_b0_part_module(b_l4_b0_feat_map)
-            b_l4_b0_g_p_feat = torch.cat(b_l4_b0_part_list, dim=1)
-            b_l4_b0_cls_score = reid_net.b_l4_b0_classifier(b_l4_b0_g_p_feat)
-            b_l4_b0_id_loss = criterion.ce_ls(b_l4_b0_cls_score, pid)
-            meter.update({"b_l4_b0_id_loss": b_l4_b0_id_loss.item()})
-            total_loss += b_l4_b0_id_loss
+            b_l4_b0_part_cls_score_list = reid_net.b_l4_b0_part_module(b_l4_b0_feat_map)
+            for score_i in b_l4_b0_part_cls_score_list:
+                b_l4_b0_id_loss_i = criterion.ce_ls(score_i, pid)
+                # meter.update({"b_l4_b0_id_loss_i": b_l4_b0_id_loss_i.item()})
+                total_loss += b_l4_b0_id_loss_i
 
             b_l4_b1_feat_map = backbone_inside_feat_map["backbone_l4_b1_feat_map"]
-            # b_l4_b1_feat = reid_net.b_l4_b1_pool(b_l4_b1_feat_map).view(B, reid_net.GLOBAL_DIM)
-            # b_l4_b1_bn_feat = reid_net.b_l4_b1_neck(b_l4_b1_feat)
-            b_l4_b1_part_list = reid_net.b_l4_b1_part_module(b_l4_b1_feat_map)
-            b_l4_b1_g_p_feat = torch.cat(b_l4_b1_part_list, dim=1)
-            b_l4_b1_cls_score = reid_net.b_l4_b1_classifier(b_l4_b1_g_p_feat)
-            b_l4_b1_id_loss = criterion.ce_ls(b_l4_b1_cls_score, pid)
-            meter.update({"b_l4_b1_id_loss": b_l4_b1_id_loss.item()})
-            total_loss += b_l4_b1_id_loss
+            b_l4_b1_part_cls_score_list = reid_net.b_l4_b1_part_module(b_l4_b1_feat_map)
+            for score_i in b_l4_b1_part_cls_score_list:
+                b_l4_b1_id_loss_i = criterion.ce_ls(score_i, pid)
+                # meter.update({"b_l4_b1_id_loss_i": b_l4_b1_id_loss_i.item()})
+                total_loss += b_l4_b1_id_loss_i
 
             if epoch > -1:
                 clothe_cls_score = clothe_base.clothe_classifier_net(backbone_feat_map.detach())

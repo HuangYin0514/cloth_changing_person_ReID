@@ -11,12 +11,13 @@ from .resnet_ibn_a import resnet50_ibn_a
 
 
 class Part_Module(nn.Module):
-    def __init__(self, c_dim=2048, part_num=8, part_dim=256, pool_type="avg"):
+    def __init__(self, num_pid, num_part=8, c_dim=2048, part_dim=256, pool_type="avg"):
         super(Part_Module, self).__init__()
         self.c_dim = c_dim
-        self.part_num = part_num
+        self.num_part = num_part
         self.part_dim = part_dim
         self.pool_type = pool_type
+        self.num_part = num_part
 
         if self.pool_type == "avg":
             self.pool = nn.AdaptiveAvgPool2d(1)
@@ -24,22 +25,30 @@ class Part_Module(nn.Module):
             self.pool = nn.AdaptiveMaxPool2d(1)
 
         self.part_conv_list = nn.ModuleList()
-        for i in range(self.part_num):
+        self.classifier_list = nn.ModuleList()
+        for i in range(self.num_part):
             conv_i = nn.Sequential(
-                nn.Linear(self.c_dim, self.part_dim, bias=False),
-                nn.BatchNorm1d(self.part_dim),
+                nn.Conv2d(2048, part_dim, 1, 1, 0),
+                nn.BatchNorm2d(self.part_dim),
+                nn.ReLU(inplace=True),
             )
             self.part_conv_list.append(conv_i)
+
+            classifier_i = Linear_Classifier(part_dim, num_pid)
+            self.classifier_list.append(classifier_i)
 
     def forward(self, feat_map):
         B, C, H, W = feat_map.size()
 
-        part_len = H // self.part_num
+        part_len = H // self.num_part
         part_feat_list = []
-        for i in range(self.part_num):
-            local_feat_map = feat_map[:, :, i * part_len : (i + 1) * part_len, :]
-            local_feat = self.pool(local_feat_map).flatten(1)
-            part_feat_i = self.part_conv_list[i](local_feat)
+        part_cls_score_list = []
+        for i in range(self.num_part):
+            part_feat_map_i = feat_map[:, :, i * part_len : (i + 1) * part_len, :]
+            part_feat_i = self.pool(part_feat_map_i)
+            part_feat_i = self.part_conv_list[i](part_feat_i).view(B, self.part_dim)
             part_feat_list.append(part_feat_i)
+            part_cls_score_i = self.classifier_list[i](part_feat_i)
+            part_cls_score_list.append(part_cls_score_i)
 
-        return part_feat_list
+        return part_cls_score_list

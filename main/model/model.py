@@ -13,7 +13,7 @@ from .resnet_ibn_a import resnet50_ibn_a
 
 class ReID_Net(nn.Module):
 
-    def __init__(self, config, pid_num):
+    def __init__(self, config, num_pid):
         super(ReID_Net, self).__init__()
         self.config = config
 
@@ -26,26 +26,17 @@ class ReID_Net(nn.Module):
         self.GLOBAL_DIM = 2048
         self.global_pool = GeneralizedMeanPoolingP()
         self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
-        self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, pid_num)
+        self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
         # ------------- Cloth cam position -----------------------
         self.clothe_cam_position = CAM()
         self.clothe_cam_pool = GeneralizedMeanPoolingP()
         self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
-        self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, pid_num)
+        self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
         # ------------- Bacbone inside -----------------------
-        # self.b_l4_b0_pool = nn.AdaptiveMaxPool2d(1)
-        # self.b_l4_b0_neck = BN_Neck(self.GLOBAL_DIM)
-        self.b_l4_b0_part_module = Part_Module(self.GLOBAL_DIM, 8, 256, pool_type="max")
-        # self.b_l4_b0_classifier = Linear_Classifier(self.GLOBAL_DIM + 256 * 8, pid_num)
-        self.b_l4_b0_classifier = Linear_Classifier(256 * 8, pid_num)
-
-        # self.b_l4_b1_pool = nn.AdaptiveAvgPool2d(1)
-        # self.b_l4_b1_neck = BN_Neck(self.GLOBAL_DIM)
-        self.b_l4_b1_part_module = Part_Module(self.GLOBAL_DIM, 8, 256, pool_type="avg")
-        # self.b_l4_b1_classifier = Linear_Classifier(self.GLOBAL_DIM + 256 * 8, pid_num)
-        self.b_l4_b1_classifier = Linear_Classifier(256 * 8, pid_num)
+        self.b_l4_b0_part_module = Part_Module(num_pid, 8, self.GLOBAL_DIM, 256, pool_type="max")
+        self.b_l4_b1_part_module = Part_Module(num_pid, 8, self.GLOBAL_DIM, 256, pool_type="avg")
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape

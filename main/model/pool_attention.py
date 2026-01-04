@@ -23,6 +23,6 @@ class Pool_Attention(nn.Module):
 
     def forward(self, feat):
         B, C, H, W = feat.shape
-        g_feat = self.pool(feat).flatten(1)
-        refined_feat = self.refinement(g_feat).unsqueeze(-1).unsqueeze(-1) * feat
+        pool_feat = self.pool(feat).flatten(1)
+        refined_feat = self.refinement(pool_feat).unsqueeze(-1).unsqueeze(-1) * feat
         return refined_feat
