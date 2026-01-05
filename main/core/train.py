@@ -28,6 +28,13 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             meter.update({"global_tri_loss": global_tri_loss.item()})
             total_loss += global_tri_loss
 
+            # Part
+            part_feat_map = reid_net.part_module(backbone_feat_map)
+            for score_i in part_feat_map:
+                part_id_loss_i = criterion.ce_ls(score_i, pid)
+                # meter.update({"b_l4_b1_id_loss_i": b_l4_b1_id_loss_i.item()})
+                total_loss += part_id_loss_i
+
             if epoch > -1:
                 clothe_cls_score = clothe_base.clothe_classifier_net(backbone_feat_map.detach())
                 clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)

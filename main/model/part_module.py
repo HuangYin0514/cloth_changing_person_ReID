@@ -24,6 +24,8 @@ class Part_Module(nn.Module):
             self.pool = nn.AdaptiveAvgPool2d(1)
         if self.pool_type == "max":
             self.pool = nn.AdaptiveMaxPool2d(1)
+        if self.pool_type == "gem":
+            self.pool = GeneralizedMeanPoolingP()
 
         self.part_conv_list = nn.ModuleList()
         self.classifier_list = nn.ModuleList()
