@@ -29,7 +29,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             total_loss += global_tri_loss
 
             # Part
-            part_feat_map = reid_net.part_module(backbone_feat_map)
+            part_feat_map = reid_net.part_module(backbone_feat_map, global_bn_feat)
             for score_i in part_feat_map:
                 part_id_loss_i = criterion.ce_ls(score_i, pid)
                 # meter.update({"b_l4_b1_id_loss_i": b_l4_b1_id_loss_i.item()})

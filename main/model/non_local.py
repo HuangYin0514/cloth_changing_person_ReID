@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 
 
-class Non_Local(nn.Module):
+class Non_local(nn.Module):
     def __init__(self, in_channels, reduc_ratio=2):
-        super(Non_Local, self).__init__()
+        super(Non_local, self).__init__()
 
         self.in_channels = in_channels
         self.inter_channels = reduc_ratio // reduc_ratio
