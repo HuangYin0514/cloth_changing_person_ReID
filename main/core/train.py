@@ -17,7 +17,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             total_loss = 0
             start_epoch = 25
 
-            backbone_feat_map, global_feat, global_bn_feat, backbone_inside_feat_map = reid_net(img)
+            backbone_feat_map, global_feat, global_bn_feat = reid_net(img)
 
             # Global
             global_cls_score = reid_net.global_classifier(global_bn_feat)
@@ -27,21 +27,6 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             global_tri_loss = criterion.tri(global_feat, pid)
             meter.update({"global_tri_loss": global_tri_loss.item()})
             total_loss += global_tri_loss
-
-            # Backbone inside
-            b_l4_b0_feat_map = backbone_inside_feat_map["backbone_l4_b0_feat_map"]
-            b_l4_b0_part_cls_score_list = reid_net.b_l4_b0_part_module(b_l4_b0_feat_map)
-            for score_i in b_l4_b0_part_cls_score_list:
-                b_l4_b0_id_loss_i = criterion.ce_ls(score_i, pid)
-                # meter.update({"b_l4_b0_id_loss_i": b_l4_b0_id_loss_i.item()})
-                total_loss += b_l4_b0_id_loss_i
-
-            b_l4_b1_feat_map = backbone_inside_feat_map["backbone_l4_b1_feat_map"]
-            b_l4_b1_part_cls_score_list = reid_net.b_l4_b1_part_module(b_l4_b1_feat_map)
-            for score_i in b_l4_b1_part_cls_score_list:
-                b_l4_b1_id_loss_i = criterion.ce_ls(score_i, pid)
-                # meter.update({"b_l4_b1_id_loss_i": b_l4_b1_id_loss_i.item()})
-                total_loss += b_l4_b1_id_loss_i
 
             if epoch > -1:
                 clothe_cls_score = clothe_base.clothe_classifier_net(backbone_feat_map.detach())

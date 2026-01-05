@@ -34,10 +34,6 @@ class ReID_Net(nn.Module):
         self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
-        # ------------- Bacbone inside -----------------------
-        self.b_l4_b0_part_module = Part_Module(num_pid, 8, self.GLOBAL_DIM, 256, pool_type="max")
-        self.b_l4_b1_part_module = Part_Module(num_pid, 8, self.GLOBAL_DIM, 256, pool_type="avg")
-
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
     #     backbone_feat_map = self.backbone(img)
@@ -47,16 +43,13 @@ class ReID_Net(nn.Module):
         B, C, H, W = img.shape
 
         # ------------- Global -----------------------
-        backbone_feat_map, backbone_l4_b0_feat_map, backbone_l4_b1_feat_map = self.backbone(img)
+        backbone_feat_map = self.backbone(img)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
-            backbone_inside_feat_map = {
-                "backbone_l4_b0_feat_map": backbone_l4_b0_feat_map,
-                "backbone_l4_b1_feat_map": backbone_l4_b1_feat_map,
-            }
-            return backbone_feat_map, global_feat, global_bn_feat, backbone_inside_feat_map
+
+            return backbone_feat_map, global_feat, global_bn_feat
         else:
             eval_feat_meter = []
             # ------------- Global -----------------------
@@ -112,9 +105,7 @@ class Backbone(nn.Module):
 
         out = self.layer4_0(out)
         out = self.pool_att_0(out)
-        res_l4_b0 = out
         out = self.layer4_1(out)
         out = self.pool_att_1(out)
-        res_l4_b1 = out
         out = self.layer4_2(out)
-        return out, res_l4_b0, res_l4_b1
+        return out
