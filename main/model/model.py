@@ -5,6 +5,7 @@ from .bn_neck import BN_Neck
 from .cam import CAM
 from .classifier import Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
+from .non_local import Non_Local
 from .part_module import Part_Module
 from .pool_attention import Pool_Attention
 from .resnet import resnet50
@@ -96,19 +97,35 @@ class Backbone(nn.Module):
         self.layer4_1 = self.layer4[1]
         self.layer4_2 = self.layer4[2]
 
-        self.pool_att_0 = Pool_Attention(pool_type="max", feature_dim=2048)
-        self.pool_att_1 = Pool_Attention(pool_type="avg", feature_dim=2048)
+        # self.pool_att_0 = Pool_Attention(pool_type="max", feature_dim=2048)
+        # self.pool_att_1 = Pool_Attention(pool_type="avg", feature_dim=2048)
+
+        self.NL_2 = nn.ModuleList([Non_Local(512) for i in range(2)])
+        self.NL_3 = nn.ModuleList([Non_Local(1024) for i in range(3)])
+
+    def _NL_forward_layer(self, x, layer, NL_modules):
+        num_blocks = len(layer)
+        nl_start_idx = num_blocks - len(NL_modules)  # 从倒数层开始插入
+        nl_counter = 0
+        for i, block in enumerate(layer):
+            x = block(x)
+            if i >= nl_start_idx:
+                x = NL_modules[nl_counter](x)
+                nl_counter += 1
+        return x
 
     def forward(self, img):
         out = self.layer0(img)
         out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        # out = self.layer4(out)
+        # out = self.layer2(out)
+        # out = self.layer3(out)
+        out = self._NL_forward_layer(out, self.layer2, self.NL_2)
+        out = self._NL_forward_layer(out, self.layer3, self.NL_3)
+        out = self.layer4(out)
 
-        out = self.layer4_0(out)
-        out = self.pool_att_0(out)
-        out = self.layer4_1(out)
-        out = self.pool_att_1(out)
-        out = self.layer4_2(out)
+        # out = self.layer4_0(out)
+        # out = self.pool_att_0(out)
+        # out = self.layer4_1(out)
+        # out = self.pool_att_1(out)
+        # out = self.layer4_2(out)
         return out
