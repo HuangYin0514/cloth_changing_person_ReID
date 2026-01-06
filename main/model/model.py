@@ -35,7 +35,7 @@ class ReID_Net(nn.Module):
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
         # ------------- Part -----------------------
-        self.part_module = Part_Module(num_pid, 4, self.GLOBAL_DIM, 256, pool_type="gem")
+        self.part_module = Part_Module(num_pid, 6, self.GLOBAL_DIM, 256, pool_type="gem")
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape

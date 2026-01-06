@@ -11,7 +11,7 @@ from .resnet_ibn_a import resnet50_ibn_a
 
 
 class Part_Module(nn.Module):
-    def __init__(self, num_pid, num_part=8, c_dim=2048, part_dim=256, pool_type="avg"):
+    def __init__(self, num_pid, num_part=6, c_dim=2048, part_dim=256, pool_type="avg"):
         super(Part_Module, self).__init__()
         self.num_part = num_part
         self.num_pid = num_pid
@@ -37,10 +37,10 @@ class Part_Module(nn.Module):
             )
             self.part_conv_list.append(conv_i)
 
-            # classifier_i = Linear_Classifier(part_dim, num_pid)
-            # self.classifier_list.append(classifier_i)
+            classifier_i = Linear_Classifier(part_dim, num_pid)
+            self.classifier_list.append(classifier_i)
 
-        self.classifier = Linear_Classifier(self.num_part * self.part_dim + 2048, self.num_pid)
+        self.classifier = Linear_Classifier(self.num_part * self.part_dim, self.num_pid)
 
     def forward(self, feat_map, global_bn_feat):
         B, C, H, W = feat_map.size()
@@ -53,10 +53,10 @@ class Part_Module(nn.Module):
             part_feat_i = self.pool(part_feat_map_i)
             part_feat_i = self.part_conv_list[i](part_feat_i).view(B, self.part_dim)
             part_feat_list.append(part_feat_i)
-            # part_cls_score_i = self.classifier_list[i](part_feat_i)
-            # part_cls_score_list.append(part_cls_score_i)
-        part_feat = torch.cat(part_feat_list, dim=1)
-        part_feat = torch.cat([part_feat, global_bn_feat], dim=1)
-        part_cls_score = self.classifier(part_feat)
+            part_cls_score_i = self.classifier_list[i](part_feat_i)
+            part_cls_score_list.append(part_cls_score_i)
+        # part_feat = torch.cat(part_feat_list, dim=1)
+        # part_feat = torch.cat([part_feat, global_bn_feat], dim=1)
+        # part_cls_score = self.classifier(part_feat)
 
-        return [part_cls_score]
+        return part_feat_list, part_cls_score_list
