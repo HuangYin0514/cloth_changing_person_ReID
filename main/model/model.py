@@ -90,11 +90,31 @@ class Backbone(nn.Module):
         self.layer3 = resnet.layer3  # 6 blocks
         self.layer4 = resnet.layer4  # 3 blocks
 
+        self.fm_s2b2 = HiLo_FM(shape=(512, 48, 24), ratio=0.2)
+        self.fm_s2b3 = HiLo_FM(shape=(512, 48, 24), ratio=0.2)
+        self.fm_s3b3 = HiLo_FM(shape=(1024, 24, 12), ratio=0.2)
+        self.fm_s3b4 = HiLo_FM(shape=(1024, 24, 12), ratio=0.2)
+
     def forward(self, img):
         out = self.layer0(img)
         out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
+
+        out = self.layer2[0](out)
+        out = self.layer2[1](out)
+        out = self.layer2[2](out)
+        out = self.fm_s2b2(out)
+        out = self.layer2[3](out)
+        out = self.fm_s2b2(out)
+
+        out = self.layer3[0](out)
+        out = self.layer3[1](out)
+        out = self.layer3[2](out)
+        out = self.layer3[3](out)
+        out = self.fm_s3b3(out)
+        out = self.layer3[4](out)
+        out = self.fm_s3b4(out)
+        out = self.layer3[5](out)
+
         out = self.layer4(out)
 
         return out
