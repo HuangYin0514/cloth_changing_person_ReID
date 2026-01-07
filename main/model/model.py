@@ -37,8 +37,6 @@ class ReID_Net(nn.Module):
 
         # ------------- IP -----------------------
         self.ip = Information_Purifier()
-        # ------------- Part -----------------------
-        # self.part_module = Part_Module(num_pid, 6, self.GLOBAL_DIM, 256, pool_type="gem")
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
