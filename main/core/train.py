@@ -28,6 +28,18 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             meter.update({"global_tri_loss": global_tri_loss.item()})
             total_loss += global_tri_loss
 
+            # Ip
+            ip_feat_map = reid_net.ip(backbone_feat_map)
+            ip_feat = reid_net.global_pool(ip_feat_map).view(B, reid_net.GLOBAL_DIM)
+            ip_bn_feat = reid_net.global_bn_neck(ip_feat)
+            ip_cls_score = reid_net.global_classifier(ip_bn_feat)
+            ip_id_loss = criterion.ce_ls(ip_cls_score, pid)
+            meter.update({"ip_id_loss": ip_id_loss.item()})
+            total_loss += ip_id_loss
+            ip_tri_loss = criterion.tri(ip_feat, pid)
+            meter.update({"ip_tri_loss": ip_tri_loss.item()})
+            total_loss += ip_tri_loss
+
             if epoch > -1:
                 clothe_cls_score = clothe_base.clothe_classifier_net(backbone_feat_map.detach())
                 clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)
