@@ -52,8 +52,8 @@ class Information_Purifier(nn.Module):
         B, C, H, W = feat_map.size()
 
         in_feat_map = self.IN(feat_map)
-        style_feat_map = feat_map - in_feat_map
-        useful_style_feat_map, useless_style_feat_map, useful_style_weight = self.style_layer(style_feat_map)
-        feat_map = feat_map + useful_style_feat_map
-        useless_feat_map = in_feat_map + useless_style_feat_map
-        return feat_map, useless_feat_map
+        # style_feat_map = feat_map - in_feat_map
+        # useful_style_feat_map, useless_style_feat_map, useful_style_weight = self.style_layer(style_feat_map)
+        # feat_map = feat_map + useful_style_feat_map
+        # useless_feat_map = in_feat_map + useless_style_feat_map
+        return in_feat_map

@@ -48,7 +48,7 @@ class ReID_Net(nn.Module):
 
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
-        backbone_feat_map, useless_backbone_feat_map = self.ip(backbone_feat_map)
+        backbone_feat_map = self.ip(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
