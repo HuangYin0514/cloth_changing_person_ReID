@@ -5,7 +5,7 @@ from .bn_neck import BN_Neck
 from .cam import CAM
 from .classifier import Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
-from .information_purifier import Information_Purifier
+from .hilo_fm import HiLo_FM
 from .part_module import Part_Module
 from .pool_attention import Pool_Attention
 from .resnet import resnet50
@@ -35,8 +35,8 @@ class ReID_Net(nn.Module):
         self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
-        # ------------- IP -----------------------
-        self.ip = Information_Purifier()
+        # ------------- FM -----------------------
+        self.fm = HiLo_FM(shape=(2048, 24, 12), ratio=0.2)
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
@@ -48,6 +48,7 @@ class ReID_Net(nn.Module):
 
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
+        backbone_feat_map = self.fm(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
