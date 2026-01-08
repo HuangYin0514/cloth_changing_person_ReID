@@ -36,7 +36,7 @@ class ReID_Net(nn.Module):
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
         # ------------- 频率调制  -----------------------
-        self.fm = HiLo_FM(shape=(1024, 24, 12), ratio=0.2)
+        self.fm = HiLo_FM(shape=(2048, 24, 12), ratio=0.2)
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
