@@ -35,9 +35,6 @@ class ReID_Net(nn.Module):
         self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
-        # ------------- 频率调制  -----------------------
-        self.fm = HiLo_FM(shape=(2048, 24, 12), ratio=0.2)
-
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
     #     backbone_feat_map = self.backbone(img)
@@ -48,14 +45,11 @@ class ReID_Net(nn.Module):
 
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
-        ori_backbone_feat_map = backbone_feat_map
-        backbone_feat_map = self.fm(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
-
-            return ori_backbone_feat_map, global_feat, global_bn_feat
+            return backbone_feat_map, global_feat, global_bn_feat
         else:
             eval_feat_meter = []
             # ------------- Global -----------------------
@@ -95,11 +89,24 @@ class Backbone(nn.Module):
         self.layer3 = resnet.layer3  # 6 blocks
         self.layer4 = resnet.layer4  # 3 blocks
 
+        self.layer4_0 = self.layer4[0]
+        self.layer4_1 = self.layer4[1]
+        self.layer4_2 = self.layer4[2]
+
+        # ------------- 频率调制  -----------------------
+        self.fm_s4b1 = HiLo_FM(shape=(2048, 24, 12), ratio=0.2)
+        self.fm_s4b2 = HiLo_FM(shape=(2048, 24, 12), ratio=0.2)
+
     def forward(self, img):
         out = self.layer0(img)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = self.layer4(out)
+        # out = self.layer4(out)
 
+        out = self.layer4_0(out)
+        out = self.fm_s4b1(out)
+        out = self.layer4_1(out)
+        out = self.fm_s4b2(out)
+        out = self.layer4_2(out)
         return out
