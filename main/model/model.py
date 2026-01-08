@@ -35,6 +35,9 @@ class ReID_Net(nn.Module):
         self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
+        # ------------- 频率调制  -----------------------
+        self.fm = HiLo_FM(shape=(1024, 24, 12), ratio=0.2)
+
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
     #     backbone_feat_map = self.backbone(img)
@@ -45,12 +48,14 @@ class ReID_Net(nn.Module):
 
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
+        ori_backbone_feat_map = backbone_feat_map
+        backbone_feat_map = self.fm(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
 
-            return backbone_feat_map, global_feat, global_bn_feat
+            return ori_backbone_feat_map, global_feat, global_bn_feat
         else:
             eval_feat_meter = []
             # ------------- Global -----------------------
