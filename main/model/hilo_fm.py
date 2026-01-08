@@ -9,21 +9,24 @@ class HiLo_FM(nn.Module):
         self.ratio = ratio
 
         in_dims, h, w = shape
-        self.pool = nn.AdaptiveMaxPool2d(1)
+        self.avg_pool = nn.AdaptiveAvgPool2d(1)
+        self.max_pool = nn.AdaptiveMaxPool2d(1)
 
         reduction = 16
-        self.refinement = nn.Sequential(
-            nn.Linear(in_dims, in_dims // reduction, bias=True),
+        self.fc = nn.Sequential(
+            nn.Conv2d(in_dims, in_dims // reduction, 1, bias=False),
             nn.ReLU(inplace=True),
-            nn.Linear(in_dims // reduction, in_dims, bias=True),
-            nn.Sigmoid(),
+            nn.Conv2d(in_dims // reduction, in_dims, 1, bias=False),
         )
 
+        self.sigmoid = nn.Sigmoid()
+
     def forward(self, feat):
-        pool_feat = self.pool(feat).flatten(1)
-        weight = self.refinement(pool_feat).unsqueeze(-1).unsqueeze(-1)
-        refined_feat = weight * feat
-        return refined_feat
+        avg_out = self.fc(self.avg_pool(feat))
+        max_out = self.fc(self.max_pool(feat))
+        out = avg_out + max_out
+        out = self.sigmoid(out)
+        return out * feat
 
 
 # def _get_masks(h, w, N=None, linspaces=None, mode="square"):
