@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 import torch
-from reid import ReIDEvaluator, evaluate_ltcc
+from reid import evaluate_ltcc
 from sklearn import metrics as sk_metrics
 from torch.nn import functional as F
 from tqdm import tqdm

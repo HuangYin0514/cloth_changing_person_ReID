@@ -52,7 +52,6 @@ def evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clo
         all_AP.append(AP)
 
     assert num_valid_q > 0, "Error: all query identities do not appear in gallery"
-    # print("Error: all query identities do not appear in gallery")
 
     all_cmc = np.asarray(all_cmc).astype(np.float32)
     all_cmc = all_cmc.sum(0) / num_valid_q
@@ -157,83 +156,83 @@ def evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clo
 ################################################################################################################
 
 
-class ReIDEvaluator:
+# class ReIDEvaluator:
 
-    def __init__(self, mode):
-        assert mode in ["inter-camera", "intra-camera", "all"]
-        self.mode = mode
+#     def __init__(self, mode):
+#         assert mode in ["inter-camera", "intra-camera", "all"]
+#         self.mode = mode
 
-    def evaluate(self, distmat, q_pids, q_camids, g_pids, g_camids):
-        # 排序
-        # rank_results = np.argsort(distmat)[:, ::-1]
-        rank_results = np.argsort(distmat, axis=1)  # from small to large
+#     def evaluate(self, distmat, q_pids, q_camids, g_pids, g_camids):
+#         # 排序
+#         # rank_results = np.argsort(distmat)[:, ::-1]
+#         rank_results = np.argsort(distmat, axis=1)  # from small to large
 
-        APs, CMC = [], []
-        for idx, data in enumerate(zip(rank_results, q_pids, q_camids)):
-            a_rank, q_pid, q_camid = data
-            ap, cmc = self.compute_AP(a_rank, q_pid, q_camid, g_pids, g_camids)
-            APs.append(ap), CMC.append(cmc)
+#         APs, CMC = [], []
+#         for idx, data in enumerate(zip(rank_results, q_pids, q_camids)):
+#             a_rank, q_pid, q_camid = data
+#             ap, cmc = self.compute_AP(a_rank, q_pid, q_camid, g_pids, g_camids)
+#             APs.append(ap), CMC.append(cmc)
 
-        MAP = np.array(APs).mean()
-        min_len = min([len(cmc) for cmc in CMC])
-        CMC = [cmc[:min_len] for cmc in CMC]
-        CMC = np.mean(np.array(CMC), axis=0)
+#         MAP = np.array(APs).mean()
+#         min_len = min([len(cmc) for cmc in CMC])
+#         CMC = [cmc[:min_len] for cmc in CMC]
+#         CMC = np.mean(np.array(CMC), axis=0)
 
-        return MAP, CMC
+#         return MAP, CMC
 
-    def compute_AP(self, a_rank, query_pid, query_cid, gallery_pids, gallery_cids):
+#     def compute_AP(self, a_rank, query_pid, query_cid, gallery_pids, gallery_cids):
 
-        if self.mode == "inter-camera":
-            # 多摄像头目标追踪：在商场、园区等多摄像头覆盖区域，追踪一个人从摄像头 A 的画面移动到摄像头 B、C 的轨迹。
-            # 有效正样本: 同 ID 且不同相机的样本
-            # 无效样本: 同 ID 且同相机的样本
-            junk_index_1 = self.in1d(np.argwhere(query_pid == gallery_pids), np.argwhere(query_cid == gallery_cids))  # 同 ID 且同相机的样本
-            junk_index_2 = np.argwhere(gallery_pids == -1)  # 无 ID 的样本
-            junk_index = np.append(junk_index_1, junk_index_2)  # 将两类无效样本的索引合并
-            index_wo_junk = self.notin1d(a_rank, junk_index)  # 在排序数组中排除无效索引
-            good_index = self.in1d(np.argwhere(query_pid == gallery_pids), np.argwhere(query_cid != gallery_cids))  # 同 ID 且不同相机的样本
+#         if self.mode == "inter-camera":
+#             # 多摄像头目标追踪：在商场、园区等多摄像头覆盖区域，追踪一个人从摄像头 A 的画面移动到摄像头 B、C 的轨迹。
+#             # 有效正样本: 同 ID 且不同相机的样本
+#             # 无效样本: 同 ID 且同相机的样本
+#             junk_index_1 = self.in1d(np.argwhere(query_pid == gallery_pids), np.argwhere(query_cid == gallery_cids))  # 同 ID 且同相机的样本
+#             junk_index_2 = np.argwhere(gallery_pids == -1)  # 无 ID 的样本
+#             junk_index = np.append(junk_index_1, junk_index_2)  # 将两类无效样本的索引合并
+#             index_wo_junk = self.notin1d(a_rank, junk_index)  # 在排序数组中排除无效索引
+#             good_index = self.in1d(np.argwhere(query_pid == gallery_pids), np.argwhere(query_cid != gallery_cids))  # 同 ID 且不同相机的样本
 
-        if self.mode == "intra-camera":
-            # 单摄像头内的目标跟踪：比如在一个监控摄像头画面中，持续追踪某个人的移动轨迹。
-            # 有效正样本: 同 ID（且同相机）的样本（排除自身）
-            # 无效样本: 不同相机的样本
-            junk_index_1 = np.argwhere(query_cid != gallery_cids)
-            junk_index_2 = np.argwhere(gallery_pids == -1)
-            junk_index = np.append(junk_index_1, junk_index_2)
-            index_wo_junk = self.notin1d(a_rank, junk_index)
-            good_index = np.argwhere(query_pid == gallery_pids)
-            self_junk = a_rank[0]
-            index_wo_junk = np.delete(index_wo_junk, np.where(self_junk == index_wo_junk))
-            good_index = np.delete(good_index, np.where(self_junk == good_index))
+#         if self.mode == "intra-camera":
+#             # 单摄像头内的目标跟踪：比如在一个监控摄像头画面中，持续追踪某个人的移动轨迹。
+#             # 有效正样本: 同 ID（且同相机）的样本（排除自身）
+#             # 无效样本: 不同相机的样本
+#             junk_index_1 = np.argwhere(query_cid != gallery_cids)
+#             junk_index_2 = np.argwhere(gallery_pids == -1)
+#             junk_index = np.append(junk_index_1, junk_index_2)
+#             index_wo_junk = self.notin1d(a_rank, junk_index)
+#             good_index = np.argwhere(query_pid == gallery_pids)
+#             self_junk = a_rank[0]
+#             index_wo_junk = np.delete(index_wo_junk, np.where(self_junk == index_wo_junk))
+#             good_index = np.delete(good_index, np.where(self_junk == good_index))
 
-        if self.mode == "all":
-            # 不排除
-            junk_index = np.argwhere(gallery_pids == -1)
-            index_wo_junk = self.notin1d(a_rank, junk_index)
-            good_index = np.argwhere(query_pid == gallery_pids)
-            self_junk = a_rank[0]
-            index_wo_junk = np.delete(index_wo_junk, np.where(self_junk == index_wo_junk))
-            good_index = np.delete(good_index, np.where(self_junk == good_index))
+#         if self.mode == "all":
+#             # 不排除
+#             junk_index = np.argwhere(gallery_pids == -1)
+#             index_wo_junk = self.notin1d(a_rank, junk_index)
+#             good_index = np.argwhere(query_pid == gallery_pids)
+#             self_junk = a_rank[0]
+#             index_wo_junk = np.delete(index_wo_junk, np.where(self_junk == index_wo_junk))
+#             good_index = np.delete(good_index, np.where(self_junk == good_index))
 
-        hit = np.in1d(index_wo_junk, good_index)
-        index_hit = np.argwhere(hit == True).flatten()
-        if len(index_hit) == 0:
-            AP = 0
-            cmc = np.zeros([len(index_wo_junk)])
-        else:
-            precision = []
-            for i in range(len(index_hit)):
-                precision.append(float(i + 1) / float((index_hit[i] + 1)))
-            AP = np.mean(np.array(precision))
-            cmc = np.zeros([len(index_wo_junk)])
-            cmc[index_hit[0] :] = 1
-        return AP, cmc
+#         hit = np.in1d(index_wo_junk, good_index)
+#         index_hit = np.argwhere(hit == True).flatten()
+#         if len(index_hit) == 0:
+#             AP = 0
+#             cmc = np.zeros([len(index_wo_junk)])
+#         else:
+#             precision = []
+#             for i in range(len(index_hit)):
+#                 precision.append(float(i + 1) / float((index_hit[i] + 1)))
+#             AP = np.mean(np.array(precision))
+#             cmc = np.zeros([len(index_wo_junk)])
+#             cmc[index_hit[0] :] = 1
+#         return AP, cmc
 
-    def in1d(self, array1, array2, invert=False):
-        # a中的元素在b中
-        mask = np.in1d(array1, array2, invert=invert)
-        return array1[mask]
+#     def in1d(self, array1, array2, invert=False):
+#         # a中的元素在b中
+#         mask = np.in1d(array1, array2, invert=invert)
+#         return array1[mask]
 
-    def notin1d(self, array1, array2):
-        # a中不在b中的元素
-        return self.in1d(array1, array2, invert=True)
+#     def notin1d(self, array1, array2):
+#         # a中不在b中的元素
+#         return self.in1d(array1, array2, invert=True)
