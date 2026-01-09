@@ -73,6 +73,12 @@ def test_for_ltcc(args, query_loader, gallery_loader, model, use_gpu, ranks=[1, 
     distmat = get_distmat(qf, gf)
     print(np.sum(distmat))
     print(distmat)
+    print("*" * 10)
+    print(q_camids)
+    print(g_camids)
+    print("*" * 10)
+    print(q_pids)
+    print(g_pids)
 
     cmc, mAP = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=False)
     if epoch:
