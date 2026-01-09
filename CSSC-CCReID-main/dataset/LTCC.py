@@ -19,7 +19,7 @@ class LTCC(BaseImageDataset):
         self.dataset_dir = dataset_root
         self.train_dir = osp.join(self.dataset_dir, "train")
         self.query_dir = osp.join(self.dataset_dir, "query")
-        self.gallery_dir = osp.join(self.dataset_dir, "test")
+        self.gallery_dir = osp.join(self.dataset_dir, "gallery")
         self._check_before_run()
 
         train, num_train_pids, num_train_imgs, num_train_clothes, pid2clothes = self._process_dir_train(self.train_dir)
