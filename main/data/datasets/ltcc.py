@@ -1,12 +1,13 @@
 import glob
-import logging
 import os.path as osp
 import re
 
 import numpy as np
 
+from .base_image_dataset import BaseImageDataset
 
-class LTCC(object):
+
+class LTCC(BaseImageDataset):
     """LTCC
 
     Reference:
@@ -15,10 +16,8 @@ class LTCC(object):
     URL: https://naiq.github.io/LTCC_Perosn_ReID.html#
     """
 
-    dataset_dir = "rgb"
-
-    def __init__(self, root="data", **kwargs):
-        self.dataset_dir = osp.join(root, self.dataset_dir)
+    def __init__(self, root="data", verbose=True, **kwargs):
+        self.dataset_dir = root
         self.train_dir = osp.join(self.dataset_dir, "train")
         self.query_dir = osp.join(self.dataset_dir, "query")
         self.gallery_dir = osp.join(self.dataset_dir, "gallery")
@@ -26,25 +25,24 @@ class LTCC(object):
 
         train, num_train_pids, num_train_imgs, num_train_clothes, pid2clothes = self._process_dir_train(self.train_dir)
         query, gallery, num_test_pids, num_query_imgs, num_gallery_imgs, num_test_clothes = self._process_dir_test(self.query_dir, self.gallery_dir)
-
         num_total_pids = num_train_pids + num_test_pids
         num_total_imgs = num_train_imgs + num_query_imgs + num_gallery_imgs
-        num_test_imgs = num_query_imgs + num_gallery_imgs
+        # num_test_imgs = num_query_imgs + num_gallery_imgs
         num_total_clothes = num_train_clothes + num_test_clothes
 
-        logger = logging.getLogger("reid.dataset")
-        logger.info("=> LTCC loaded")
-        logger.info("Dataset statistics:")
-        logger.info("  ----------------------------------------")
-        logger.info("  subset   | # ids | # images | # clothes")
-        logger.info("  ----------------------------------------")
-        logger.info("  train    | {:5d} | {:8d} | {:9d}".format(num_train_pids, num_train_imgs, num_train_clothes))
-        logger.info("  test     | {:5d} | {:8d} | {:9d}".format(num_test_pids, num_test_imgs, num_test_clothes))
-        logger.info("  query    | {:5d} | {:8d} |".format(num_test_pids, num_query_imgs))
-        logger.info("  gallery  | {:5d} | {:8d} |".format(num_test_pids, num_gallery_imgs))
-        logger.info("  ----------------------------------------")
-        logger.info("  total    | {:5d} | {:8d} | {:9d}".format(num_total_pids, num_total_imgs, num_total_clothes))
-        logger.info("  ----------------------------------------")
+        if verbose:
+            print("=> LTCC loaded")
+            print("Dataset statistics:")
+            print("  ----------------------------------------")
+            print("  subset   | # ids | # images | # clothes")
+            print("  ----------------------------------------")
+            print("  train    | {:5d} | {:8d} | {:9d}".format(num_train_pids, num_train_imgs, num_train_clothes))
+            # print("  test     | {:5d} | {:8d} | {:9d}".format(num_test_pids, num_test_imgs, num_test_clothes))
+            print("  query    | {:5d} | {:8d} |".format(num_test_pids, num_query_imgs))
+            print("  gallery  | {:5d} | {:8d} |".format(num_test_pids, num_gallery_imgs))
+            print("  ----------------------------------------")
+            print("  total    | {:5d} | {:8d} | {:9d}".format(num_total_pids, num_total_imgs, num_total_clothes))
+            print("  ----------------------------------------")
 
         self.train = train
         self.query = query
@@ -52,7 +50,6 @@ class LTCC(object):
 
         self.num_train_pids = num_train_pids
         self.num_train_clothes = num_train_clothes
-
         self.pid2clothes = pid2clothes
 
     def _check_before_run(self):
@@ -70,7 +67,7 @@ class LTCC(object):
         img_paths = glob.glob(osp.join(dir_path, "*.png"))
         img_paths.sort()
         pattern1 = re.compile(r"(\d+)_(\d+)_c(\d+)")
-        pattern2 = re.compile(r"(\d+_\d+)_c(\d+)")  # 修复潜在路径问题
+        pattern2 = re.compile(r"(\w+)_c")
 
         pid_container = set()
         clothes_container = set()
@@ -79,8 +76,8 @@ class LTCC(object):
             clothes_id = pattern2.search(img_path).group(1)
             pid_container.add(pid)
             clothes_container.add(clothes_id)
-        pid_container = sorted(pid_container)
-        clothes_container = sorted(clothes_container)
+        pid_container = sorted(list(pid_container))
+        clothes_container = sorted(list(clothes_container))
         pid2label = {pid: label for label, pid in enumerate(pid_container)}
         clothes2label = {clothes_id: label for label, clothes_id in enumerate(clothes_container)}
 
@@ -95,7 +92,7 @@ class LTCC(object):
             camid -= 1  # index starts from 0
             pid = pid2label[pid]
             clothes_id = clothes2label[clothes]
-            dataset.append((img_path, pid, camid, clothes_id))
+            dataset.append((img_path, pid, clothes_id, camid))
             pid2clothes[pid, clothes_id] = 1
 
         num_imgs = len(dataset)
@@ -108,7 +105,7 @@ class LTCC(object):
         query_img_paths.sort()
         gallery_img_paths.sort()
         pattern1 = re.compile(r"(\d+)_(\d+)_c(\d+)")
-        pattern2 = re.compile(r"(\d+_\d+)_c(\d+)")  # 修复潜在路径问题
+        pattern2 = re.compile(r"(\w+)_c")
 
         pid_container = set()
         clothes_container = set()
@@ -137,14 +134,14 @@ class LTCC(object):
             clothes_id = pattern2.search(img_path).group(1)
             camid -= 1  # index starts from 0
             clothes_id = clothes2label[clothes_id]
-            query_dataset.append((img_path, pid, camid, clothes_id))
+            query_dataset.append((img_path, pid, clothes_id, camid))
 
         for img_path in gallery_img_paths:
             pid, _, camid = map(int, pattern1.search(img_path).groups())
             clothes_id = pattern2.search(img_path).group(1)
             camid -= 1  # index starts from 0
             clothes_id = clothes2label[clothes_id]
-            gallery_dataset.append((img_path, pid, camid, clothes_id))
+            gallery_dataset.append((img_path, pid, clothes_id, camid))
 
         num_imgs_query = len(query_dataset)
         num_imgs_gallery = len(gallery_dataset)

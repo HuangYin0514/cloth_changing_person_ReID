@@ -2,9 +2,8 @@ TASK:
   NAME: "Method_Name"
   NOTES: "KaggleVersion_Notes"
   PROJECT: "CC_ReID"
-  TAGS: ["dev", "train"]  
   DEVICE: "cuda"  
-  SEED: 1
+  SEED: 666
 
 DATA:
   TRAIN_DATASET: "ltcc"
