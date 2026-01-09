@@ -28,7 +28,7 @@ SCHEDULER:
   NAME: "WarmupMultiStepLR"
 
 TEST:
-  EVAL_EPOCH: 5
+  EVAL_EPOCH: 1
   # RESUME_TEST_MODEL: 119  
   # TEST_MODE: "inter-camera"  
   RE_RANK: False
