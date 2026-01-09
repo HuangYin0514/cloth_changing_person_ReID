@@ -68,7 +68,7 @@ def run(config):
     # 初始化最佳指标
     best_epoch, best_mAP, best_rank1 = 0, 0, 0
     for epoch in range(0, config.OPTIMIZER.TOTAL_TRAIN_EPOCH):
-        meter = train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch, logger, clothe_base)
+        meter = train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch)
         logger("Time: {}; Epoch: {}; {}".format(util.time_now(), epoch, meter.get_str()))
         wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
 

@@ -3,10 +3,9 @@ import util
 from tqdm import tqdm
 
 
-def train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch, logger, clothe_base):
+def train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch):
     scheduler.step(epoch)
     reid_net.train()
-    clothe_base.clothe_classifier_net.train()
     meter = util.MultiItemAverageMeter()
     for epoch, data in enumerate(tqdm(train_loader)):
         img, pid, camid, clotheid = data
