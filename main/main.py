@@ -69,8 +69,8 @@ def run(config):
     best_epoch, best_mAP, best_rank1 = 0, 0, 0
     for epoch in range(0, config.OPTIMIZER.TOTAL_TRAIN_EPOCH):
         meter = train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch)
-        # logger("Time: {}; Epoch: {}; {}".format(util.time_now(), epoch, meter.get_str()))
-        # wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
+        logger("Time: {}; Epoch: {}; {}".format(util.time_now(), epoch, meter.get_str()))
+        wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
 
         if epoch % config.TEST.EVAL_EPOCH == 0 or epoch == config.OPTIMIZER.TOTAL_TRAIN_EPOCH - 1:
             logger("=====> Start Testing...")
@@ -78,7 +78,7 @@ def run(config):
             mAP, CMC = test(config, reid_net, query_loader, gallery_loader, device, logger)
             logger("reid time:\t {:.3f}s".format(time.time() - end))
             logger("Dataset: {}, \t mAP: {:.2f}%; \t R-1: {:.2f}%.".format(config.DATA.TRAIN_DATASET, mAP * 100, CMC[0] * 100))
-            # wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
+            wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
 
             # is_best_rank_flag = CMC[0] >= best_rank1
             is_best_map_flag = mAP >= best_mAP
@@ -86,7 +86,7 @@ def run(config):
                 best_epoch = epoch
                 best_rank1 = CMC[0]
                 best_mAP = mAP
-                # wandb.log({"best_epoch": best_epoch, "best_rank1": best_rank1, "best_mAP": best_mAP})
+                wandb.log({"best_epoch": best_epoch, "best_rank1": best_rank1, "best_mAP": best_mAP})
                 # if epoch > 40:
                 #     util.save_model(model=reid_net, epoch=epoch, path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
 
@@ -101,13 +101,13 @@ if __name__ == "__main__":
     util.set_seed_torch(config.TASK.SEED)
 
     # 初始化wandb
-    # wandb.init(
-    #     entity="yinhuang-team-projects",
-    #     project=config.TASK.PROJECT,
-    #     name=config.TASK.NAME,
-    #     notes=config.TASK.NOTES,
-    #     tags=config.TASK.TAGS,
-    #     config=config,
-    # )
+    wandb.init(
+        entity="yinhuang-team-projects",
+        project=config.TASK.PROJECT,
+        name=config.TASK.NAME,
+        notes=config.TASK.NOTES,
+        tags=config.TASK.TAGS,
+        config=config,
+    )
     run(config)
-    # wandb.finish()
+    wandb.finish()
