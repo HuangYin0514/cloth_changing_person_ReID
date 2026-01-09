@@ -40,6 +40,34 @@ class ConfigNode(dict):
                 val = False
         d[keys[-1]] = val
 
+    def __str__(self):
+        """重写字符串输出方法，让打印结果自动换行、格式化"""
+        return self._pretty_print(self, indent=0)
+
+    def __repr__(self):
+        """保持repr和str输出一致"""
+        return self.__str__()
+
+    def _pretty_print(self, obj, indent):
+        """递归生成格式化的字符串，实现自动换行"""
+        indent_str = "  " * indent  # 每层缩进2个空格
+        if isinstance(obj, ConfigNode):
+            items = []
+            for key, value in obj.items():
+                # 递归处理每个值，缩进+1
+                items.append(f"{indent_str}{key}: {self._pretty_print(value, indent + 1)}")
+            # 每个键值对换行显示
+            return "\n".join(items)
+        elif isinstance(obj, dict):
+            # 兼容普通字典的格式化
+            items = []
+            for key, value in obj.items():
+                items.append(f"{indent_str}{key}: {self._pretty_print(value, indent + 1)}")
+            return "\n".join(items)
+        else:
+            # 基础类型直接返回值
+            return str(obj)
+
 
 def load_config(config_file, opts):
     # Load YAML

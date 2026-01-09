@@ -105,13 +105,13 @@ if __name__ == "__main__":
     util.set_seed_torch(config.TASK.SEED)
 
     # 初始化wandb
-    wandb.init(
-        entity="yinhuang-team-projects",
-        project=config.TASK.PROJECT,
-        name=config.TASK.NAME,
-        notes=config.TASK.NOTES,
-        tags=config.TASK.TAGS,
-        config=config,
-    )
+    # wandb.init(
+    #     entity="yinhuang-team-projects",
+    #     project=config.TASK.PROJECT,
+    #     name=config.TASK.NAME,
+    #     notes=config.TASK.NOTES,
+    #     tags=config.TASK.TAGS,
+    #     config=config,
+    # )
     run(config)
-    wandb.finish()
+    # wandb.finish()
