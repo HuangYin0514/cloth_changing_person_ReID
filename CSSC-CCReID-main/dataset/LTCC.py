@@ -1,30 +1,29 @@
-import re
 import glob
-import numpy as np
 import os.path as osp
+import re
 
+import numpy as np
 from dataset.base_image_dataset import BaseImageDataset
 
 
 class LTCC(BaseImageDataset):
-    """ LTCC
+    """LTCC
 
     Reference:
         Qian et al. Long-Term Cloth-Changing Person Re-identification. arXiv:2005.12633, 2020.
 
     URL: https://naiq.github.io/LTCC_Perosn_ReID.html#
     """
-    def __init__(self, dataset_root='data', dataset_filename='LTCC_ReID', verbose=True, **kwargs):
-        self.dataset_dir = osp.join(dataset_root, dataset_filename)
-        self.train_dir = osp.join(self.dataset_dir, 'train')
-        self.query_dir = osp.join(self.dataset_dir, 'query')
-        self.gallery_dir = osp.join(self.dataset_dir, 'test')
+
+    def __init__(self, dataset_root="data", dataset_filename="LTCC_ReID", verbose=True, **kwargs):
+        self.dataset_dir = dataset_root
+        self.train_dir = osp.join(self.dataset_dir, "train")
+        self.query_dir = osp.join(self.dataset_dir, "query")
+        self.gallery_dir = osp.join(self.dataset_dir, "test")
         self._check_before_run()
 
-        train, num_train_pids, num_train_imgs, num_train_clothes, pid2clothes = \
-            self._process_dir_train(self.train_dir)
-        query, gallery, num_test_pids, num_query_imgs, num_gallery_imgs, num_test_clothes = \
-            self._process_dir_test(self.query_dir, self.gallery_dir)
+        train, num_train_pids, num_train_imgs, num_train_clothes, pid2clothes = self._process_dir_train(self.train_dir)
+        query, gallery, num_test_pids, num_query_imgs, num_gallery_imgs, num_test_clothes = self._process_dir_test(self.query_dir, self.gallery_dir)
         num_total_pids = num_train_pids + num_test_pids
         num_total_imgs = num_train_imgs + num_query_imgs + num_gallery_imgs
         # num_test_imgs = num_query_imgs + num_gallery_imgs
@@ -64,10 +63,10 @@ class LTCC(BaseImageDataset):
             raise RuntimeError("'{}' is not available".format(self.gallery_dir))
 
     def _process_dir_train(self, dir_path):
-        img_paths = glob.glob(osp.join(dir_path, '*.png'))
+        img_paths = glob.glob(osp.join(dir_path, "*.png"))
         img_paths.sort()
-        pattern1 = re.compile(r'(\d+)_(\d+)_c(\d+)')
-        pattern2 = re.compile(r'(\w+)_c')
+        pattern1 = re.compile(r"(\d+)_(\d+)_c(\d+)")
+        pattern2 = re.compile(r"(\w+)_c")
 
         pid_container = set()
         clothes_container = set()
@@ -94,18 +93,18 @@ class LTCC(BaseImageDataset):
             clothes_id = clothes2label[clothes]
             dataset.append((img_path, pid, clothes_id, camid))
             pid2clothes[pid, clothes_id] = 1
-        
+
         num_imgs = len(dataset)
 
         return dataset, num_pids, num_imgs, num_clothes, pid2clothes
 
     def _process_dir_test(self, query_path, gallery_path):
-        query_img_paths = glob.glob(osp.join(query_path, '*.png'))
-        gallery_img_paths = glob.glob(osp.join(gallery_path, '*.png'))
+        query_img_paths = glob.glob(osp.join(query_path, "*.png"))
+        gallery_img_paths = glob.glob(osp.join(gallery_path, "*.png"))
         query_img_paths.sort()
         gallery_img_paths.sort()
-        pattern1 = re.compile(r'(\d+)_(\d+)_c(\d+)')
-        pattern2 = re.compile(r'(\w+)_c')
+        pattern1 = re.compile(r"(\d+)_(\d+)_c(\d+)")
+        pattern2 = re.compile(r"(\w+)_c")
 
         pid_container = set()
         clothes_container = set()
@@ -132,17 +131,17 @@ class LTCC(BaseImageDataset):
         for img_path in query_img_paths:
             pid, _, camid = map(int, pattern1.search(img_path).groups())
             clothes_id = pattern2.search(img_path).group(1)
-            camid -= 1 # index starts from 0
+            camid -= 1  # index starts from 0
             clothes_id = clothes2label[clothes_id]
             query_dataset.append((img_path, pid, clothes_id, camid))
 
         for img_path in gallery_img_paths:
             pid, _, camid = map(int, pattern1.search(img_path).groups())
             clothes_id = pattern2.search(img_path).group(1)
-            camid -= 1 # index starts from 0
+            camid -= 1  # index starts from 0
             clothes_id = clothes2label[clothes_id]
             gallery_dataset.append((img_path, pid, clothes_id, camid))
-        
+
         num_imgs_query = len(query_dataset)
         num_imgs_gallery = len(gallery_dataset)
 
