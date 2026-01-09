@@ -67,7 +67,8 @@ def get_distmat(qf, gf, dist="cosine"):
     if dist == "cosine":
         distmat = cosine_dist(qf, gf)
     if dist == "euclidean":
-        distmat = euclidean_dist(torch.from_numpy(qf), torch.from_numpy(gf))
+        # distmat = euclidean_dist(torch.from_numpy(qf), torch.from_numpy(gf))
+        distmat = euclidean_dist(qf, gf)
     return distmat
 
 
