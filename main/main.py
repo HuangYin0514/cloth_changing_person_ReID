@@ -38,12 +38,14 @@ def run(config):
     # Device
     device = torch.device(config.TASK.DEVICE)
     logger("Device is:\t {}".format(device))
+    logger("*" * 20)
 
     ######################################################################
     # Data
     end = time.time()
     dataset, train_loader, query_loader, gallery_loader = build_dataloader(config)
     logger("Data loading time:\t {:.3f}".format(time.time() - end))
+    logger("*" * 20)
 
     ######################################################################
     # Model
