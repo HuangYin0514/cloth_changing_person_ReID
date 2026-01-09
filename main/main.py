@@ -76,8 +76,8 @@ def run(config):
             logger("=====> Start Testing...")
             end = time.time()
             mAP, CMC = test(config, reid_net, query_loader, gallery_loader, device, logger)
-            logger("reid time:\t {:.3f}s".format(time.time() - end))
-            logger("Dataset: {}, \t mAP: {:.2f}%; \t R-1: {:.2f}%.".format(config.DATA.TRAIN_DATASET, mAP * 100, CMC[0] * 100))
+            logger("reid time: {:.3f}s".format(time.time() - end))
+            logger("Dataset: {}, \t mAP: {:.4f}%; \t R-1: {:.4f}%.".format(config.DATA.TRAIN_DATASET, mAP * 100, CMC[0] * 100))
             wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
 
             # is_best_rank_flag = CMC[0] >= best_rank1
@@ -91,7 +91,7 @@ def run(config):
                 #     util.save_model(model=reid_net, epoch=epoch, path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
 
     logger("=" * 50)
-    logger("Best model is: epoch: {}, mAP: {:.2f}%, rank1: {:.2f}%.".format(best_epoch, best_mAP * 100, best_rank1 * 100))
+    logger("Best model is: epoch: {}, mAP: {:.4f}%, rank1: {:.4f}%.".format(best_epoch, best_mAP * 100, best_rank1 * 100))
     logger("=" * 50)
 
 
