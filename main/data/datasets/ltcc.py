@@ -67,7 +67,7 @@ class LTCC:
         img_paths = glob.glob(osp.join(dir_path, "*.png"))
         img_paths.sort()
         pattern1 = re.compile(r"(\d+)_(\d+)_c(\d+)")
-        pattern2 = re.compile(r"(\w+)_c")
+        pattern2 = re.compile(r"(\d+_\d+)_c(\d+)")  # 修复潜在路径问题
 
         pid_container = set()
         clothes_container = set()
@@ -105,7 +105,7 @@ class LTCC:
         query_img_paths.sort()
         gallery_img_paths.sort()
         pattern1 = re.compile(r"(\d+)_(\d+)_c(\d+)")
-        pattern2 = re.compile(r"(\w+)_c")
+        pattern2 = re.compile(r"(\d+_\d+)_c(\d+)")  # 修复潜在路径问题
 
         pid_container = set()
         clothes_container = set()

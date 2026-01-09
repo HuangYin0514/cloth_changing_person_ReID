@@ -51,8 +51,8 @@ def evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clo
         AP = tmp_cmc.sum() / num_rel
         all_AP.append(AP)
 
-    # assert num_valid_q > 0, "Error: all query identities do not appear in gallery"
-    print("Error: all query identities do not appear in gallery")
+    assert num_valid_q > 0, "Error: all query identities do not appear in gallery"
+    # print("Error: all query identities do not appear in gallery")
 
     all_cmc = np.asarray(all_cmc).astype(np.float32)
     all_cmc = all_cmc.sum(0) / num_valid_q
