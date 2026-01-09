@@ -86,7 +86,7 @@ def get_args():
     parser.add_argument("--evaluate", action="store_true", help="evaluation only")
     parser.add_argument("--print_train_info_epoch_freq", type=int, default=5, help="print training information per #epoch, default -1 means don't print")
     parser.add_argument("--start_eval_epoch", type=int, default=0, help="start to evaluate after training a specific epoch")
-    parser.add_argument("--eval_epoch", type=int, default=5, help="run evaluation for every N epochs (set to -1 to test after training)")
+    parser.add_argument("--eval_epoch", type=int, default=1, help="run evaluation for every N epochs (set to -1 to test after training)")
     parser.add_argument("--reranking", action="store_true", help="result re_ranking")
     parser.add_argument("--save_dir", type=str, default="log")
     parser.add_argument("--save_checkpoint", action="store_true", help="save model checkpoint")
