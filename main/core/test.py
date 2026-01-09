@@ -82,6 +82,12 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
     distmat = get_distmat(qf, gf, dist="euclidean")
     print(np.sum(distmat))
     print(distmat)
+    print("*" * 10)
+    print(q_camids)
+    print(g_camids)
+    print("*" * 10)
+    print(q_pids)
+    print(g_pids)
 
     if config.TEST.RE_RANK:
         logger("Using re_ranking technology...")
