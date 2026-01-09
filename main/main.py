@@ -48,24 +48,18 @@ def run(config):
     ######################################################################
     # Model
     reid_net = ReID_Net(config, dataset.num_train_pids).to(device)
-    # logger("Model:\n {}".format(reid_net))
 
     ######################################################################
     # Criterion
     criterion = Build_Criterion(config, dataset.num_train_pids)
-    logger("Criterion:\t {}".format(criterion))
 
     # ######################################################################
     # Optimizer
     optimizer = Build_Optimizer(config, reid_net).optimizer
-    logger("Optimizer:\t {}".format(optimizer))
 
     ######################################################################
     # Scheduler
     scheduler = Build_Scheduler(config, optimizer).scheduler
-    logger("Scheduler:\t {}".format(scheduler))
-
-    clothe_base = Build_Clothe_BASE(config, dataset.num_train_clothes, dataset.pid2clothes, device)
 
     ######################################################################
     # Training & Evaluation
