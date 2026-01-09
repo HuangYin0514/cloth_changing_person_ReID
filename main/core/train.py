@@ -40,6 +40,14 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             meter.update({"id_loss_{}".format(index): id_loss.item()})
             loss += id_loss
 
+        tri_start_epoch = 35
+        # tri_start_epoch = -1
+        if epoch > tri_start_epoch:
+            for feat in feat_list:
+                tri_loss = criterion.tri(feat, pid)
+                loss += tri_loss
+                meter.update({"tri_loss_{}".format(index): tri_loss.item()})
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()

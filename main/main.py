@@ -77,6 +77,8 @@ def run(config):
             end = time.time()
             mAP, CMC = test(config, reid_net, query_loader, gallery_loader, device, logger)
             logger("reid time:\t {:.3f}s".format(time.time() - end))
+            logger("Dataset: {}, \t mAP: {:.2f}%; \t R-1: {:.2f}%.".format(config.DATA.TRAIN_DATASET, mAP * 100, CMC[0] * 100))
+            # wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
 
             # is_best_rank_flag = CMC[0] >= best_rank1
             is_best_map_flag = mAP >= best_mAP
@@ -87,11 +89,9 @@ def run(config):
                 # wandb.log({"best_epoch": best_epoch, "best_rank1": best_rank1, "best_mAP": best_mAP})
                 # if epoch > 40:
                 #     util.save_model(model=reid_net, epoch=epoch, path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
-            # logger("Time: {}; Test on Dataset: {}, \n mAP: {}; \n Rank: {}.".format(util.time_now(), config.DATA.TRAIN_DATASET, mAP, CMC))
-            # wandb.log({"test_epoch": epoch, "mAP": mAP, "Rank1": CMC[0]})
 
     logger("=" * 50)
-    logger("Best model is: epoch: {}, rank1: {:.2f}%, mAP: {:.2f}%.".format(best_epoch, best_rank1 * 100, best_mAP * 100))
+    logger("Best model is: epoch: {}, mAP: {:.2f}%, rank1: {:.2f}%.".format(best_epoch, best_mAP * 100, best_rank1 * 100))
     logger("=" * 50)
 
 
