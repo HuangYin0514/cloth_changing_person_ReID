@@ -45,6 +45,8 @@ def train(args, epoch, train_loader, model, optimizer, scheduler, class_criterio
         if epoch > tri_start_epoch:
             tri_losses.update(tri_loss.item(), pid.size(0))
 
-        print("Ep{0} Id:{id_loss.avg:.4f} Tri:{tri_loss.avg:.4f} ".format(epoch, id_loss=id_losses, tri_loss=tri_losses))
+    # if args.print_train_info_epoch_freq != -1 and epoch % args.print_train_info_epoch_freq == 0:
+    #     print('Ep{0} Id:{id_loss.avg:.4f} Tri:{tri_loss.avg:.4f} '.format(
+    #         epoch, id_loss=id_losses, tri_loss=tri_losses))
 
     scheduler.step()
