@@ -15,6 +15,7 @@ class Build_Optimizer:
                 {
                     "params": net.parameters(),
                     "lr": config.OPTIMIZER.LEARNING_RATE,
+                    "initial_lr": config.OPTIMIZER.LEARNING_RATE,
                     "weight_decay": 5e-4,
                 }
             ]
