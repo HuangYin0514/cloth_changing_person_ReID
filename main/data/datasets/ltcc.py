@@ -7,7 +7,7 @@ import numpy as np
 from .base_image_dataset import BaseImageDataset
 
 
-class LTCC(BaseImageDataset):
+class LTCC:
     """LTCC
 
     Reference:
