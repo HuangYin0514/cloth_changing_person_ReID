@@ -87,8 +87,8 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
 
     # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(distmat, q_pids, q_camids, g_pids, g_camids)  # 标准测试/性能低于服装专用的评估器
     # logger("SC mode, \t mAP: {:.2f}; \t Rank: {}.".format(mAP, CMC[0:20]))
-    CMC_SC, mAP_SC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, mode="SC")
-    logger("SC mode, \t mAP: {:.4f}; \t Rank: {}.".format(mAP_SC, CMC_SC[0:20]))
-    CMC_CC, mAP_CC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, mode="CC")
-    logger("CC mode, \t mAP: {:.4f}; \t Rank: {}.".format(mAP_CC, CMC_CC[0:20]))
+    CMC_SC, mAP_SC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=False)
+    logger("SC mode, \t mAP: {:.2f}%; \t R-1: {:.2f}%. \t Rank: {}.".format(mAP_SC * 100, CMC_SC[0] * 100, CMC_SC[0:20]))
+    CMC_CC, mAP_CC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=True)
+    logger("SC mode, \t mAP: {:.2f}%; \t R-1: {:.2f}%. \t Rank: {}.".format(mAP_CC * 100, CMC_CC[0] * 100, CMC_SC[0:20]))
     return mAP_CC, CMC_CC[0:20]
