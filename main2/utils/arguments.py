@@ -65,7 +65,7 @@ def get_args():
 
     # Optimization options
     parser.add_argument("--start_epoch", default=0, type=int, help="manual epoch number (useful on restarts)")
-    parser.add_argument("--max_epoch", default=120, type=int, help="maximum epochs to run")
+    parser.add_argument("--max_epoch", default=2, type=int, help="maximum epochs to run")
     parser.add_argument("--margin", type=float, default=0.3, help="margin for triplet loss. If not specified, use soft-margin version.")
 
     parser.add_argument("--lr", default=0.0003, type=float, help="initial learning rate")
