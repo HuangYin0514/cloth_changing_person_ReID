@@ -49,6 +49,7 @@ class ReID_Net(nn.Module):
         global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
+
             return backbone_feat_map, global_feat, global_bn_feat
         else:
             eval_feat_meter = []

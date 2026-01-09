@@ -18,7 +18,6 @@ class HiLo_FM(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(in_dims // reduction, in_dims, 1, bias=False),
         )
-
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, feat):
