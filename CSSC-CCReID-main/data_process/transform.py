@@ -3,7 +3,7 @@ import random, math
 
 
 class RandomErasing(object):
-    """ Randomly selects a rectangle region in an image and erases its pixels.
+    """Randomly selects a rectangle region in an image and erases its pixels.
         'Random Erasing Data Augmentation' by Zhong et al.
         See https://arxiv.org/pdf/1708.04896.pdf
     Args:
@@ -39,32 +39,35 @@ class RandomErasing(object):
                 x1 = random.randint(0, img.size()[1] - h)
                 y1 = random.randint(0, img.size()[2] - w)
                 if img.size()[0] == 3:
-                    img[0, x1:x1 + h, y1:y1 + w] = self.mean[0]
-                    img[1, x1:x1 + h, y1:y1 + w] = self.mean[1]
-                    img[2, x1:x1 + h, y1:y1 + w] = self.mean[2]
+                    img[0, x1 : x1 + h, y1 : y1 + w] = self.mean[0]
+                    img[1, x1 : x1 + h, y1 : y1 + w] = self.mean[1]
+                    img[2, x1 : x1 + h, y1 : y1 + w] = self.mean[2]
                 else:
-                    img[0, x1:x1 + h, y1:y1 + w] = self.mean[0]
+                    img[0, x1 : x1 + h, y1 : y1 + w] = self.mean[0]
                 return img
 
         return img
 
 
 def get_transform(args):
-    transform_train = T.Compose([
-        T.Resize((args.height, args.width)),
-        T.RandomHorizontalFlip(p=args.horizontal_flip_pro),
-        T.Pad(padding=args.pad_size),
-        T.RandomCrop((args.height, args.width)),
+    transform_train = T.Compose(
+        [
+            T.Resize((args.height, args.width)),
+            T.RandomHorizontalFlip(p=args.horizontal_flip_pro),
+            T.Pad(padding=args.pad_size),
+            T.RandomCrop((args.height, args.width)),
+            T.ToTensor(),
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            RandomErasing(probability=args.random_erasing_pro, mean=[0.0, 0.0, 0.0]),
+        ]
+    )
 
-        T.ToTensor(),
-        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-        RandomErasing(probability=args.random_erasing_pro, mean=[0.0, 0.0, 0.0])
-    ])
-
-    transform_test = T.Compose([
-        T.Resize((args.height, args.width)),
-        T.ToTensor(),
-        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ])
+    transform_test = T.Compose(
+        [
+            T.Resize((args.height, args.width)),
+            T.ToTensor(),
+            T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ]
+    )
 
     return transform_train, transform_test
