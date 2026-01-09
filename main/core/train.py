@@ -27,7 +27,7 @@ class AverageMeter(object):
 
 def train(config, reid_net, train_loader, criterion, optimizer, scheduler, device, epoch):
     reid_net.train()
-    id_losses = AverageMeter()
+    meter = util.MultiItemAverageMeter()
     for batch_idx, data in enumerate(tqdm(train_loader)):
         img, pid, camid, clotheid = data
         img, pid, camid, clotheid = img.to(device), pid.to(device), camid.to(device), clotheid.to(device)
@@ -35,16 +35,14 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
         feat_list, y_list = reid_net(img)
 
         loss = 0
-        for y in y_list:
+        for index, y in enumerate(y_list):
             id_loss = criterion.ce_ls(y, pid)
+            meter.update({"id_loss_{}".format(index): id_loss.item()})
             loss += id_loss
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        id_losses.update(id_loss.item(), pid.size(0))
-        print("Ep{0} Id:{id_loss.avg:.4f} ".format(epoch, id_loss=id_losses))
-
     scheduler.step()
-    return id_losses
+    return meter
