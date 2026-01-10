@@ -67,7 +67,6 @@ def get_distmat(qf, gf, dist="cosine"):
     if dist == "cosine":
         distmat = cosine_dist(qf, gf)
     if dist == "euclidean":
-        # distmat = euclidean_dist(torch.from_numpy(qf), torch.from_numpy(gf))
         distmat = euclidean_dist(torch.from_numpy(qf), torch.from_numpy(gf))
     return distmat
 
@@ -80,24 +79,16 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
 
     distmat = get_distmat(qf, gf, dist="euclidean")
-    print(np.sum(distmat))
-    print(distmat)
-    print("*" * 10)
-    print(q_camids)
-    print(g_camids)
-    print("*" * 10)
-    print(q_pids)
-    print(g_pids)
 
     if config.TEST.RE_RANK:
         logger("Using re_ranking technology...")
         distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
 
     # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(distmat, q_pids, q_camids, g_pids, g_camids)  # 标准测试/性能低于服装专用的评估器
-    # logger("SC mode, \t mAP: {:.2f}; \t Rank: {}.".format(mAP, CMC[0:20]))
+    # logger("SC mode, \t mAP: {:.4f}; \t Rank: {}.".format(mAP, CMC[0:20]))
 
     CMC_SC, mAP_SC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=False)
-    logger("SC mode, \t mAP: {:.2f}%; \t R-1: {:.2f}%. \t Rank: {}.".format(mAP_SC * 100, CMC_SC[0] * 100, CMC_SC[0:20]))
+    logger("SC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_SC * 100, CMC_SC[0] * 100, CMC_SC[0:20]))
     CMC_CC, mAP_CC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=True)
-    logger("CC mode, \t mAP: {:.2f}%; \t R-1: {:.2f}%. \t Rank: {}.".format(mAP_CC * 100, CMC_CC[0] * 100, CMC_CC[0:20]))
+    logger("CC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_CC * 100, CMC_CC[0] * 100, CMC_CC[0:20]))
     return mAP_CC, CMC_CC[0:20]
