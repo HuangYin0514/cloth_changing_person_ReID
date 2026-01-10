@@ -74,7 +74,7 @@ def run(config):
 
         if (epoch + 1) % config.TEST.EVAL_EPOCH == 0 or (epoch + 1) == config.OPTIMIZER.TOTAL_TRAIN_EPOCH:
             logger("=====> Start Testing...")
-            end = time.time()
+            # end = time.time()
             mAP, CMC = test(config, reid_net, query_loader, gallery_loader, device, logger)
             # logger("Reid time: {:.3f}s".format(time.time() - end))
             logger("Dataset: {}, \t mAP: {:.4f}%; \t R-1: {:.4f}%.".format(config.DATA.TRAIN_DATASET, mAP * 100, CMC[0] * 100))
