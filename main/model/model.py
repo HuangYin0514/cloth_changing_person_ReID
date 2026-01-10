@@ -1,151 +1,92 @@
-import copy
-
 import torch
 import torch.nn as nn
-import torchvision
 
-
-def weights_init_kaiming(m):
-    classname = m.__class__.__name__
-    if classname.find("Linear") != -1:
-        nn.init.kaiming_normal_(m.weight, a=0, mode="fan_out")
-        if m.bias is not None:
-            nn.init.constant_(m.bias, 0.0)
-    elif classname.find("Conv") != -1:
-        nn.init.kaiming_normal_(m.weight, a=0, mode="fan_in")
-        if m.bias is not None:
-            nn.init.constant_(m.bias, 0.0)
-    elif classname.find("BatchNorm") != -1:
-        if m.affine:
-            nn.init.constant_(m.weight, 1.0)
-            nn.init.constant_(m.bias, 0.0)
-
-
-def weights_init_classifier(m):
-    classname = m.__class__.__name__
-    if classname.find("Linear") != -1:
-        nn.init.normal_(m.weight, std=0.001)
-        if m.bias is not None:
-            nn.init.constant_(m.bias, 0.0)
-
-
-class SMR(nn.Module):
-    def __init__(self, pool_type="avg", part_dim=256, part_num=8, reduction=16, feature_dim=-1, num_classes=-1):
-        super().__init__()
-        self.pool_type = pool_type
-        self.part_dim = part_dim
-        self.part_num = part_num
-        self.feature_dim = feature_dim
-        self.num_classes = num_classes
-
-        self.bottleneck = nn.BatchNorm1d(self.feature_dim)
-        self.bottleneck.bias.requires_grad_(False)
-        self.bottleneck.apply(weights_init_kaiming)
-
-        self.pool = nn.AdaptiveAvgPool2d(1) if self.pool_type == "avg" else nn.AdaptiveMaxPool2d(1)
-        self.l_conv_list = nn.ModuleList()
-        for i in range(self.part_num):
-            self.l_conv_list.append(nn.Sequential(nn.Linear(self.feature_dim, self.part_dim, bias=False), nn.BatchNorm1d(self.part_dim)))
-
-        embed_dim = self.part_num * self.part_dim + self.feature_dim
-        self.classifier = nn.Linear(embed_dim, self.num_classes, bias=False)
-        self.classifier.apply(weights_init_classifier)
-
-        self.refinement = nn.Sequential(
-            nn.Linear(self.feature_dim, self.feature_dim // reduction, bias=True),
-            nn.ReLU(inplace=True),
-            nn.Linear(self.feature_dim // reduction, self.feature_dim, bias=True),
-            nn.Sigmoid(),
-        )
-
-    def forward(self, x):
-        g_feat = self.pool(x).flatten(1)
-
-        if self.training:
-            g_feat_bn = self.bottleneck(g_feat)
-            l_feat_list = []
-            part_len = x.shape[2] // self.part_num
-            for i in range(self.part_num):
-                l_feat = self.pool(x[:, :, i * part_len : (i + 1) * part_len, :]).flatten(1)
-                l_feat_conv = self.l_conv_list[i](l_feat)
-                l_feat_list.append(l_feat_conv)
-
-            feat_bn = torch.cat([g_feat_bn, torch.cat(l_feat_list, dim=-1)], dim=-1)
-            y = self.classifier(feat_bn)
-
-        x_refined = self.refinement(g_feat).unsqueeze(-1).unsqueeze(-1) * x
-
-        if self.training:
-            return x_refined, g_feat, y
-        else:
-            return x_refined
+from .bn_neck import BN_Neck
+from .cam import CAM
+from .classifier import Linear_Classifier
+from .gem_pool import GeneralizedMeanPoolingP
+from .part_module import Part_Module
+from .pool_attention import Pool_Attention
+from .resnet import resnet50
+from .resnet_ibn_a import resnet50_ibn_a
 
 
 class ReID_Net(nn.Module):
-    def __init__(self, config, num_pid, last_stride=1, pretrain=True):
-        super().__init__()
-        resnet = getattr(torchvision.models, "resnet50")(pretrained=pretrain)
-        resnet.layer4[0].downsample[0].stride = (last_stride, last_stride)
-        resnet.layer4[0].conv2.stride = (last_stride, last_stride)
-        self.backbone_before_layer4 = nn.Sequential(*list(resnet.children())[:-3])
 
-        self.num_pid = num_pid
-        feature_dim = 2048
-        self.feature_dim = feature_dim
+    def __init__(self, config, num_pid):
+        super(ReID_Net, self).__init__()
+        self.config = config
 
-        self.backbone_layer41_branch1 = resnet.layer4[0]
-        self.backbone_layer42_branch1 = resnet.layer4[1]
-        self.backbone_layer41_branch2 = copy.deepcopy(resnet.layer4[0])
-        self.backbone_layer42_branch2 = copy.deepcopy(resnet.layer4[1])
-        self.backbone_layer43 = resnet.layer4[2]
+        BACKBONE_TYPE = config.MODEL.BACKBONE_TYPE
 
-        self.smr_c_branch1 = SMR(pool_type="avg", feature_dim=feature_dim, num_classes=num_pid)
-        self.smr_s_branch1 = SMR(pool_type="max", feature_dim=feature_dim, num_classes=num_pid)
-        self.smr_s_branch2 = SMR(pool_type="max", feature_dim=feature_dim, num_classes=num_pid)
-        self.smr_c_branch2 = SMR(pool_type="avg", feature_dim=feature_dim, num_classes=num_pid)
+        # ------------- Backbone -----------------------
+        self.backbone = Backbone(BACKBONE_TYPE)
 
-        self.pool = nn.AdaptiveMaxPool2d(1)
-        self.bottleneck = nn.BatchNorm1d(self.feature_dim)
-        self.bottleneck.bias.requires_grad_(False)
-        self.bottleneck.apply(weights_init_kaiming)
-        self.classifier = nn.Linear(self.feature_dim, self.num_pid, bias=False)
-        self.classifier.apply(weights_init_classifier)
+        # ------------- Global -----------------------
+        self.GLOBAL_DIM = 2048
+        self.global_pool = GeneralizedMeanPoolingP()
+        self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
+        self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
-    def forward(self, x):
-        x = self.backbone_before_layer4(x)
+    # def heatmap(self, img):
+    #     B, C, H, W = img.shape
+    #     backbone_feat_map = self.backbone(img)
+    #     return backbone_feat_map
 
-        # branch 1
-        x_c_branch1 = self.backbone_layer41_branch1(x)
-        if not self.training:
-            x_c_branch1 = self.smr_c_branch1(x_c_branch1)
-        else:
-            x_c_branch1, feat_c_branch1, y_c_branch1 = self.smr_c_branch1(x_c_branch1)
+    def forward(self, img):
+        B, C, H, W = img.shape
 
-        x_cs_branch1 = self.backbone_layer42_branch1(x_c_branch1)
-        if not self.training:
-            x_cs_branch1 = self.smr_s_branch1(x_cs_branch1)
-        else:
-            x_cs_branch1, feat_cs_branch1, y_cs_branch1 = self.smr_s_branch1(x_cs_branch1)
-
-        # branch 2
-        x_s_branch2 = self.backbone_layer41_branch2(x)
-        if not self.training:
-            x_s_branch2 = self.smr_s_branch2(x_s_branch2)
-        else:
-            x_s_branch2, feat_s_branch2, y_s_branch2 = self.smr_s_branch2(x_s_branch2)
-
-        x_sc_branch2 = self.backbone_layer42_branch2(x_s_branch2)
-        if not self.training:
-            x_sc_branch2 = self.smr_c_branch2(x_sc_branch2)
-        else:
-            x_sc_branch2, feat_sc_branch2, y_sc_branch2 = self.smr_c_branch2(x_sc_branch2)
-
-        x_cssc = self.backbone_layer43(x_cs_branch1 + x_sc_branch2)
-        feat_cssc = self.pool(x_cssc).flatten(1)
+        # ------------- Global -----------------------
+        backbone_feat_map = self.backbone(img)
+        global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
+        global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
-            feat_cssc_bn = self.bottleneck(feat_cssc)
-            y_cssc = self.classifier(feat_cssc_bn)
-            return [feat_c_branch1, feat_cs_branch1, feat_s_branch2, feat_sc_branch2, feat_cssc], [y_c_branch1, y_cs_branch1, y_s_branch2, y_sc_branch2, y_cssc]
+            return backbone_feat_map, global_feat, global_bn_feat
         else:
-            return feat_cssc
+            eval_feat_meter = []
+            # ------------- Global -----------------------
+            eval_feat_meter.append(global_bn_feat)
+
+            eval_feat = torch.cat(eval_feat_meter, dim=1)
+            return eval_feat
+
+
+#############################################################
+
+
+class Backbone(nn.Module):
+    def __init__(self, backbone_type):
+        super(Backbone, self).__init__()
+
+        resnet = None
+        if backbone_type == "resnet50":
+            resnet = resnet50(pretrained=True)
+        if backbone_type == "resnet50_ibn_a":
+            resnet = resnet50_ibn_a(pretrained=True)
+
+        # Modifiy backbone
+        resnet.layer4[0].downsample[0].stride = (1, 1)
+        resnet.layer4[0].conv2.stride = (1, 1)
+
+        # Backbone structure
+        self.layer0 = nn.Sequential(
+            resnet.conv1,
+            resnet.bn1,
+            resnet.relu,
+            resnet.maxpool,
+        )
+
+        self.layer1 = resnet.layer1  # 3 blocks
+        self.layer2 = resnet.layer2  # 4 blocks
+        self.layer3 = resnet.layer3  # 6 blocks
+        self.layer4 = resnet.layer4  # 3 blocks
+
+    def forward(self, img):
+        out = self.layer0(img)
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
+
+        return out
