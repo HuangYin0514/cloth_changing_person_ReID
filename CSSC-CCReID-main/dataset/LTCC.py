@@ -91,7 +91,7 @@ class LTCC(BaseImageDataset):
             camid -= 1  # index starts from 0
             pid = pid2label[pid]
             clothes_id = clothes2label[clothes]
-            dataset.append((img_path, pid, camid, clothes_id))
+            dataset.append((img_path, pid, clothes_id, camid))
             pid2clothes[pid, clothes_id] = 1
 
         num_imgs = len(dataset)
@@ -133,14 +133,14 @@ class LTCC(BaseImageDataset):
             clothes_id = pattern2.search(img_path).group(1)
             camid -= 1  # index starts from 0
             clothes_id = clothes2label[clothes_id]
-            query_dataset.append((img_path, pid, camid, clothes_id))
+            query_dataset.append((img_path, pid, clothes_id, camid))
 
         for img_path in gallery_img_paths:
             pid, _, camid = map(int, pattern1.search(img_path).groups())
             clothes_id = pattern2.search(img_path).group(1)
             camid -= 1  # index starts from 0
             clothes_id = clothes2label[clothes_id]
-            gallery_dataset.append((img_path, pid, camid, clothes_id))
+            gallery_dataset.append((img_path, pid, clothes_id, camid))
 
         num_imgs_query = len(query_dataset)
         num_imgs_gallery = len(gallery_dataset)
