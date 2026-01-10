@@ -4,6 +4,7 @@ import torch.nn as nn
 from .bn_neck import BN_Neck
 from .classifier import Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
+from .hilo_fm import HiLo_FM
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
 
@@ -79,11 +80,22 @@ class Backbone(nn.Module):
         self.layer3 = resnet.layer3  # 6 blocks
         self.layer4 = resnet.layer4  # 3 blocks
 
+        self.layer4_b0 = self.layer4[0]
+        self.layer4_b1 = self.layer4[1]
+        self.layer4_b2 = self.layer4[2]
+
+        self.fm_s4b1 = HiLo_FM(shape=(2048, 24, 12), ratio=0.2)
+        self.fm_s4b2 = HiLo_FM(shape=(2048, 24, 12), ratio=0.2)
+
     def forward(self, img):
         out = self.layer0(img)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
-        out = self.layer4(out)
 
+        out = self.layer4_b0(out)
+        out = self.fm_s4b1(out)
+        out = self.layer4_b1(out)
+        out = self.fm_s4b2(out)
+        out = self.layer4_b2(out)
         return out
