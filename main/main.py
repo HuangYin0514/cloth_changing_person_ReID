@@ -72,7 +72,7 @@ def run(config):
         logger("Epoch: {}; {}".format(epoch, meter.get_str()))
         wandb.log({"Lr": optimizer.param_groups[0]["lr"], **meter.get_dict()})
 
-        if epoch % config.TEST.EVAL_EPOCH == 0 or epoch == config.OPTIMIZER.TOTAL_TRAIN_EPOCH - 1:
+        if (epoch + 1) % config.TEST.EVAL_EPOCH == 0 or (epoch + 1) == config.OPTIMIZER.TOTAL_TRAIN_EPOCH:
             logger("=====> Start Testing...")
             end = time.time()
             mAP, CMC = test(config, reid_net, query_loader, gallery_loader, device, logger)
