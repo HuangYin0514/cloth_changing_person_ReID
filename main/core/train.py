@@ -49,7 +49,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
                 total_loss += unclothe_cam_tri_loss
 
             # 蒸馏
-            propagation_loss = 0.01 / B * reid_net.propagation(student_logits=global_cls_score, teacher_logits=unclothe_cam_cls_score)
+            propagation_loss = 0.01 * reid_net.propagation(student_logits=global_cls_score, teacher_logits=unclothe_cam_cls_score)
             meter.update({"propagation_loss": propagation_loss.item()})
             total_loss += propagation_loss
 
