@@ -6,14 +6,6 @@ from .classifier import BN_Neck, Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
 
 
-class Empty_Module(nn.Module):
-    def __init__(self):
-        super(Empty_Module, self).__init__()
-
-    def forward(self, x):
-        return
-
-
 class Clothe_Classifier_Net(nn.Module):
     def __init__(self, pid_num):
         super(Clothe_Classifier_Net, self).__init__()
