@@ -51,6 +51,11 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
                 meter.update({"unclothe_cam_tri_loss": unclothe_cam_tri_loss.item()})
                 total_loss += unclothe_cam_tri_loss
 
+                # 蒸馏
+                propagation_loss = 0.1 * criterion.propagation(student_logits=global_cls_score, teacher_logits=unclothe_cam_cls_score)
+                meter.update({"propagation_loss": propagation_loss.item()})
+                total_loss += propagation_loss
+
             optimizer.zero_grad()
             total_loss.backward()
             optimizer.step()

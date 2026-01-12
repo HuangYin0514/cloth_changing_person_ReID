@@ -6,7 +6,6 @@ from .cam import CAM
 from .classifier import Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
 from .pool_attention import Pool_Attention
-from .propagation import Propagation
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
 
@@ -33,9 +32,6 @@ class ReID_Net(nn.Module):
         self.clothe_cam_pool = GeneralizedMeanPoolingP()
         self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
-
-        # ------------- Propagation -----------------------
-        self.propagation = Propagation(T=4)
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
