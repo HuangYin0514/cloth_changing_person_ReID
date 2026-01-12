@@ -1,4 +1,3 @@
-import torch
 import util
 from tqdm import tqdm
 
@@ -34,9 +33,10 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             clothe_loss.backward()
             clothe_base.optimizer.step()
             clothe_feat_map = reid_net.clothe_cam_position(backbone_feat_map, clotheid, clothe_base.clothe_classifier_net)
+            id_feat_map = reid_net.clothe_cam_position(backbone_feat_map, pid, reid_net.global_classifier)
 
             # 去除衣服
-            unclothe_cam_feat_map = backbone_feat_map - clothe_feat_map
+            unclothe_cam_feat_map = id_feat_map - clothe_feat_map
             unclothe_cam_feat = reid_net.clothe_cam_pool(unclothe_cam_feat_map).view(B, reid_net.GLOBAL_DIM)
             unclothe_cam_feat_bn_feat = reid_net.clothe_cam_bn_neck(unclothe_cam_feat)
             unclothe_cam_cls_score = reid_net.clothe_cam_classifier(unclothe_cam_feat_bn_feat)
@@ -49,7 +49,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
                 total_loss += unclothe_cam_tri_loss
 
             # 蒸馏
-            propagation_loss = 0.01 * reid_net.propagation(student_logits=global_cls_score, teacher_logits=unclothe_cam_cls_score)
+            propagation_loss = 0.1 * reid_net.propagation(student_logits=global_cls_score, teacher_logits=unclothe_cam_cls_score)
             meter.update({"propagation_loss": propagation_loss.item()})
             total_loss += propagation_loss
 
