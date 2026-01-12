@@ -1,13 +1,12 @@
 import glob
+import logging
 import os.path as osp
 import re
 
 import numpy as np
 
-from .base_image_dataset import BaseImageDataset
 
-
-class LTCC:
+class LTCC(object):
     """LTCC
 
     Reference:
@@ -30,6 +29,7 @@ class LTCC:
         # num_test_imgs = num_query_imgs + num_gallery_imgs
         num_total_clothes = num_train_clothes + num_test_clothes
 
+        logger = logging.getLogger("reid.dataset")
         if verbose:
             print("=> LTCC loaded")
             print("Dataset statistics:")
@@ -37,7 +37,6 @@ class LTCC:
             print("  subset   | # ids | # images | # clothes")
             print("  ----------------------------------------")
             print("  train    | {:5d} | {:8d} | {:9d}".format(num_train_pids, num_train_imgs, num_train_clothes))
-            # print("  test     | {:5d} | {:8d} | {:9d}".format(num_test_pids, num_test_imgs, num_test_clothes))
             print("  query    | {:5d} | {:8d} |".format(num_test_pids, num_query_imgs))
             print("  gallery  | {:5d} | {:8d} |".format(num_test_pids, num_gallery_imgs))
             print("  ----------------------------------------")
@@ -50,6 +49,7 @@ class LTCC:
 
         self.num_train_pids = num_train_pids
         self.num_train_clothes = num_train_clothes
+
         self.pid2clothes = pid2clothes
 
     def _check_before_run(self):

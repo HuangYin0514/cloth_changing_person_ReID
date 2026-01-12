@@ -16,7 +16,7 @@ class Build_Scheduler:
         if config.SCHEDULER.NAME == "WarmupMultiStepLR":
             self.scheduler = WarmupMultiStepLR(
                 optimizer,
-                [30, 60],
+                [20, 40],
                 gamma=0.1,
                 warmup_factor=0.1,
                 warmup_iters=10,
@@ -39,13 +39,10 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
         last_epoch=-1,
     ):
         if not list(milestones) == sorted(milestones):
-            raise ValueError(
-                "Milestones should be a list of" " increasing integers. Got {}",
-                milestones,
-            )
+            raise ValueError("Milestones should be a list of " " increasing integers. Got {}", milestones)
 
         if warmup_method not in ("constant", "linear"):
-            raise ValueError("Only 'constant' or 'linear' warmup_method accepted" "got {}".format(warmup_method))
+            raise ValueError("Only 'constant' or 'linear' warmup method accepted got {}".format(warmup_method))
         self.milestones = milestones
         self.gamma = gamma
         self.warmup_factor = warmup_factor
@@ -59,10 +56,8 @@ class WarmupMultiStepLR(torch.optim.lr_scheduler._LRScheduler):
             if self.warmup_method == "constant":
                 warmup_factor = self.warmup_factor
             elif self.warmup_method == "linear":
-                alpha = self.last_epoch / self.warmup_iters
+                alpha = float(self.last_epoch) / float(self.warmup_iters)
                 warmup_factor = self.warmup_factor * (1 - alpha) + alpha
-            elif self.warmup_method == "exp":  # add by wqz according to fastreid/solver/lr_scheduler.py
-                warmup_factor = self.warmup_factor ** (1 - self.last_epoch / self.warmup_iters)
         return [base_lr * warmup_factor * self.gamma ** bisect_right(self.milestones, self.last_epoch) for base_lr in self.base_lrs]
 
 

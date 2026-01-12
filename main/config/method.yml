@@ -2,8 +2,9 @@ TASK:
   NAME: "Method_Name"
   NOTES: "KaggleVersion_Notes"
   PROJECT: "CC_ReID"
+  TAGS: ["dev", "train"]  
   DEVICE: "cuda"  
-  SEED: 666
+  SEED: 1
 
 DATA:
   TRAIN_DATASET: "ltcc"
@@ -13,7 +14,7 @@ DATA:
   BATCHSIZE: 32
   NUM_INSTANCES: 8
   TEST_BATCH: 128
-  NUM_WORKERS: 8
+  NUM_WORKERS: 0
   
 MODEL:
   MODULE: "Lucky"   # Lucky / Baseline / B_IP
@@ -22,7 +23,7 @@ MODEL:
 OPTIMIZER:
   NAME: "Adam"
   TOTAL_TRAIN_EPOCH: 120
-  LEARNING_RATE: 0.0003
+  LEARNING_RATE: 0.00035
 
 SCHEDULER:
   NAME: "WarmupMultiStepLR"

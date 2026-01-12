@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from loss import CrossEntropyLabelSmooth
-from model import Clothe_Classifier_Net
+from model import Clothe_Classifier
 
 
 class Build_Clothe_BASE:
@@ -12,11 +12,11 @@ class Build_Clothe_BASE:
         self.build(config, *args, **kwargs)
 
     def build(self, config, num_clothe_pids, pid2clothes, device):
-        self.clothe_classifier_net = Clothe_Classifier_Net(num_clothe_pids).to(device)
+        self.clothe_classifier = Clothe_Classifier(num_clothe_pids).to(device)
 
         model_params_group = [
             {
-                "params": self.clothe_classifier_net.parameters(),
+                "params": self.clothe_classifier.parameters(),
                 "lr": config.OPTIMIZER.LEARNING_RATE,
                 "weight_decay": 5e-4,
                 "momentum": 0.9,

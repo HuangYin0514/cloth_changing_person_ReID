@@ -15,8 +15,8 @@ class Build_Optimizer:
                 {
                     "params": net.parameters(),
                     "lr": config.OPTIMIZER.LEARNING_RATE,
-                    "initial_lr": config.OPTIMIZER.LEARNING_RATE,
                     "weight_decay": 5e-4,
+                    "momentum": 0.9,
                 }
             ]
             self.optimizer = optim.Adam(model_params_group)

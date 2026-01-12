@@ -1,2 +1,2 @@
+from .classifier import Clothe_Classifier
 from .model import ReID_Net
-from .clothe_classifier_net import Clothe_Classifier_Net
