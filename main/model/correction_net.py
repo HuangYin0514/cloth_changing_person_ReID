@@ -7,8 +7,8 @@ from einops import rearrange
 
 class Dot_Product_Attention(nn.Module):
     """
-    feat_i_dim [B, C, HW]
-    feat_j_dim [B, C, HW]
+    feat_i_dim [B, C, H, W]
+    feat_j_dim [B, C, H, W]
     """
 
     def __init__(self, feat_i_dim, reduction=8):
