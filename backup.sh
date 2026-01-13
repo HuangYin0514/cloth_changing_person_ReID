@@ -11,7 +11,7 @@
 ####################################
 VERSION_NAME="123-L4_Cam_Correction_KD"
 
-# cp -rf main _历史代码/0_调试代码/${VERSION_NAME}
+# cp -rf main "_历史代码/0_关键代码/${VERSION_NAME}"
 cp -rf main "_历史代码/1_调试代码/${VERSION_NAME}"
 echo -e "\n✅ 成功：代码已备份！"
 
