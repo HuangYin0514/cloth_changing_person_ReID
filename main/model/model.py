@@ -32,7 +32,7 @@ class ReID_Net(nn.Module):
         self.clothe_position = CAM()
 
         # ------------- 校准 -----------------------
-        self.clothe_correction = AttentionCorrectionNetwork(self.GLOBAL_DIM)
+        self.clothe_correction = AttentionCorrectionNetwork(self.GLOBAL_DIM, self.GLOBAL_DIM // 16)
 
         # ------------- 非衣服区域约束 -----------------------
         self.unclothe_pool = GeneralizedMeanPoolingP()
