@@ -46,6 +46,7 @@
 *.png
 
 *backup.sh
+
 # 修复pyc文件异常上传的问题
 # git rm --cached '**/*.pyc'
 # git add .gitignore
