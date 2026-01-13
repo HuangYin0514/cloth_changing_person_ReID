@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 
+from .attention_correction_network import AttentionCorrectionNetwork
 from .bn_neck import BN_Neck
 from .cam import CAM
 from .classifier import Linear_Classifier
@@ -27,11 +28,16 @@ class ReID_Net(nn.Module):
         self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
-        # ------------- Cloth cam position -----------------------
-        self.clothe_cam_position = CAM()
-        self.clothe_cam_pool = GeneralizedMeanPoolingP()
-        self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
-        self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
+        # ------------- 定位 -----------------------
+        self.clothe_position = CAM()
+
+        # ------------- 校准 -----------------------
+        self.clothe_correction = AttentionCorrectionNetwork(self.GLOBAL_DIM)
+
+        # ------------- 非衣服区域约束 -----------------------
+        self.unclothe_pool = GeneralizedMeanPoolingP()
+        self.unclothe_bn_neck = BN_Neck(self.GLOBAL_DIM)
+        self.unclothe_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
