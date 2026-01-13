@@ -51,7 +51,7 @@ class AttentionCorrectionNetwork(nn.Module):
         self.channel_attn = ChannelAttentionRefinement()
 
     def forward(self, cam, feat):
-        return self.spatial_attn(cam, feat) + self.channel_attn(cam, feat)
+        return (self.spatial_attn(cam, feat) + self.channel_attn(cam, feat)) / 2
 
 
 # 测试代码

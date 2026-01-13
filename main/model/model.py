@@ -4,6 +4,7 @@ import torch.nn as nn
 from .attention_correction_network import AttentionCorrectionNetwork
 from .bn_neck import BN_Neck
 from .cam import CAM
+from .cbr import CBR
 from .classifier import Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
 from .pool_attention import Pool_Attention
@@ -35,6 +36,7 @@ class ReID_Net(nn.Module):
         self.clothe_correction = AttentionCorrectionNetwork(self.GLOBAL_DIM, self.GLOBAL_DIM // 16)
 
         # ------------- 非衣服区域约束 -----------------------
+        self.unclothe_cbr = CBR(self.GLOBAL_DIM, self.GLOBAL_DIM, 1, 1, 0)
         self.unclothe_pool = GeneralizedMeanPoolingP()
         self.unclothe_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.unclothe_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
