@@ -11,10 +11,9 @@ class Dot_Product_Attention(nn.Module):
     feat_j_dim [B, C, H, W]
     """
 
-    def __init__(self, feat_i_dim, reduction=8):
+    def __init__(self, feat_i_dim, reduction=16):
         super().__init__()
         inner_dim = feat_i_dim // reduction
-        self.scale = feat_i_dim**-0.5
 
         self.to_q = nn.Conv2d(feat_i_dim, inner_dim, 1, 1, 0, bias=False)
         self.to_k = nn.Conv2d(feat_i_dim, inner_dim, 1, 1, 0, bias=False)
@@ -24,8 +23,6 @@ class Dot_Product_Attention(nn.Module):
     def forward(self, feat_map_i, feat_map_j):
         B, C, H, W = feat_map_i.shape
 
-        SCALE = self.scale
-
         q = self.to_q(feat_map_i)
         q = rearrange(q, "b d H W -> b (H W) d")
 
@@ -34,7 +31,7 @@ class Dot_Product_Attention(nn.Module):
 
         v = rearrange(feat_map_j, "b d H W -> b (H W) d")
 
-        dots = torch.einsum("b i d, b j d -> b i j", q, k) * SCALE
+        dots = torch.einsum("b i d, b j d -> b i j", q, k)
         attn = dots.softmax(dim=-1)
 
         out = torch.einsum("b i j, b j d -> b i d", attn, v)
@@ -50,9 +47,9 @@ class Correction_Net(nn.Module):
         self.spatial_attn = Dot_Product_Attention(feat_i_dim)
         # self.channel_attn = ChannelAttentionRefinement()
 
-    def forward(self, cam, feat):
+    def forward(self, feat_map_i, feat_map_j):
         # cam_feat_map = (self.spatial_attn(cam, feat) + self.channel_attn(cam, feat)) / 2
-        cam_feat_map = self.spatial_attn(cam, feat)
+        cam_feat_map = self.spatial_attn(feat_map_i, feat_map_j)
         return cam_feat_map
 
 
