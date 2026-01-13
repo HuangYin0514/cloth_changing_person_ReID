@@ -34,7 +34,7 @@ class Dot_Product_Attention(nn.Module):
         dots = torch.einsum("b i d, b j d -> b i j", q, k)
         attn = dots.softmax(dim=-1)
 
-        out = torch.einsum("b i j, b j d -> b i d", attn, v)
+        out = torch.einsum("b i j, b i d -> b j d", attn, v)
         out = rearrange(out, "b (H W) d -> b d H W", H=H, W=W)
 
         return self.alpha * out + feat_map_j
