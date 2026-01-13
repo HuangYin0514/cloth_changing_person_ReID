@@ -21,7 +21,7 @@ class SpatialAttentionRefinement(nn.Module):
         # 应用注意力
         cam_flat = cam.flatten(2)
         cam_refined = torch.matmul(cam_flat, attn).unflatten(2, (H, W))
-        return self.alpha * cam_refined
+        return self.alpha * cam_refined + cam
 
 
 # 2. 独立通道注意力分支
@@ -40,7 +40,7 @@ class ChannelAttentionRefinement(nn.Module):
         attn = torch.softmax(attn, dim=-1)
         # 应用注意力
         cam_refined = torch.matmul(attn, feat_flat).unflatten(2, (H, W))
-        return self.beta * cam_refined
+        return self.beta * cam_refined + cam
 
 
 # 3. 双重注意力模块
@@ -51,7 +51,9 @@ class AttentionCorrectionNetwork(nn.Module):
         self.channel_attn = ChannelAttentionRefinement()
 
     def forward(self, cam, feat):
-        return (self.spatial_attn(cam, feat) + self.channel_attn(cam, feat)) / 2
+        # cam_feat_map = (self.spatial_attn(cam, feat) + self.channel_attn(cam, feat)) / 2
+        cam_feat_map = self.spatial_attn(cam, feat)
+        return cam_feat_map
 
 
 # 测试代码
