@@ -39,7 +39,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             clothe_feat_map = reid_net.clothe_position(backbone_feat_map, clotheid, clothe_base.clothe_classifier)
 
             # 区域校准
-            clothe_feat_map = reid_net.clothe_correction(clothe_feat_map, backbone_feat_map)
+            clothe_feat_map = reid_net.clothe_correction(backbone_feat_map, clothe_feat_map)
 
             # 非衣服区域约束
             # unclothe_cam_feat_map = reid_net.unclothe_cbr(backbone_feat_map - clothe_feat_map)
