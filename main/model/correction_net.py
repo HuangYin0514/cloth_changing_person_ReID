@@ -2,42 +2,38 @@ from multiprocessing import reduction
 
 import torch
 import torch.nn as nn
-from einops import rearrange
+from einops import rearrange  # 需要导入einops库
 
 
+# 1. 独立空间注意力分支
 class Dot_Product_Attention(nn.Module):
-    """
-    feat_i_dim [B, C, H, W]
-    feat_j_dim [B, C, H, W]
-    """
-
-    def __init__(self, feat_i_dim, reduction=16):
+    def __init__(self, feat_channels, reduction_ratio=16):
         super().__init__()
-        inner_dim = feat_i_dim // reduction
+        mid_channels = feat_channels // reduction_ratio
 
-        self.to_q = nn.Conv2d(feat_i_dim, inner_dim, 1, 1, 0, bias=False)
-        self.to_k = nn.Conv2d(feat_i_dim, inner_dim, 1, 1, 0, bias=False)
-
+        self.to_q = nn.Conv2d(feat_channels, mid_channels, 1, bias=False)
+        self.to_k = nn.Conv2d(feat_channels, mid_channels, 1, bias=False)
         self.alpha = nn.Parameter(torch.tensor(1.0))
 
-    def forward(self, feat_map_i, feat_map_j):
-        B, C, H, W = feat_map_i.shape
+    def forward(self, feat_map, cam_feat_map):
+        B, C, H, W = cam_feat_map.shape
 
-        q = self.to_q(feat_map_i)
-        q = rearrange(q, "b d H W -> b (H W) d")
+        # 特征变换 + rearrange维度展平（这部分和之前一致，无需修改）
+        q = self.to_q(feat_map)  # [B, mid, H, W]
+        q = rearrange(q, "b c h w -> b c (h w)")  # [B, mid, H*W] (b c j)
 
-        k = self.to_k(feat_map_i)
-        k = rearrange(k, "b d H W -> b (H W) d")
+        k = self.to_k(feat_map)  # [B, mid, H, W]
+        k = rearrange(k, "b c h w -> b (h w) c")  # [B, H*W, mid] (b i c)
 
-        v = rearrange(feat_map_j, "b d H W -> b (H W) d")
+        v = rearrange(cam_feat_map, "b c h w -> b c (h w)")  # [B, C, H*W]
 
-        dots = torch.einsum("b i d, b j d -> b i j", q, k)
-        attn = dots.softmax(dim=-1)
+        attn = torch.einsum("b c j, b i c -> b i j", q, k)  # 结果仍为 [B, H*W, H*W]
+        attn = torch.softmax(attn, dim=-1)
 
-        out = torch.einsum("b i j, b i d -> b j d", attn, v)
-        out = rearrange(out, "b (H W) d -> b d H W", H=H, W=W)
+        refined_cam_feat_map = torch.einsum("b c i, b i j -> b c j", v, attn)
+        refined_cam_feat_map = rearrange(refined_cam_feat_map, "b c (h w) -> b c h w", h=H, w=W)
 
-        return self.alpha * out + feat_map_j
+        return self.alpha * refined_cam_feat_map + cam_feat_map
 
 
 # 3. 双重注意力模块
@@ -47,9 +43,9 @@ class Correction_Net(nn.Module):
         self.spatial_attn = Dot_Product_Attention(feat_i_dim)
         # self.channel_attn = ChannelAttentionRefinement()
 
-    def forward(self, feat_map_i, feat_map_j):
+    def forward(self, feat_map, cam_feat_map):
         # cam_feat_map = (self.spatial_attn(cam, feat) + self.channel_attn(cam, feat)) / 2
-        cam_feat_map = self.spatial_attn(feat_map_i, feat_map_j)
+        cam_feat_map = self.spatial_attn(feat_map, cam_feat_map)
         return cam_feat_map
 
 
