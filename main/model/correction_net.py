@@ -26,9 +26,6 @@ class Spatial_Attention(nn.Module):
         attn = torch.einsum("b i c, b c j -> b i j", f1_flat_T, f2_flat)
         attn = torch.softmax(attn, dim=-1)
 
-        # cam_flat_T = rearrange(cam, "b c h w -> b (h w) c")
-        # cam_refined_flat = torch.einsum("b i j, b j c -> b i c", attn, cam_flat_T)
-        # cam_refined = rearrange(cam_refined_flat, "b (h w) c -> b c h w", h=H, w=W)
         cam_flat = rearrange(cam, "b c h w -> b c (h w)")
         cam_refined_flat = torch.einsum("b c i, b i j -> b c j", cam_flat, attn)
         cam_refined = rearrange(cam_refined_flat, "b c (h w) -> b c h w", h=H, w=W)
@@ -36,43 +33,38 @@ class Spatial_Attention(nn.Module):
         return self.alpha * cam_refined + cam
 
 
-# class Channel_Attention(nn.Module):
-#     def __init__(self):
-#         super().__init__()
-#         self.alpha = nn.Parameter(torch.tensor(1.0))
+class Channel_Attention(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.alpha = nn.Parameter(torch.tensor(1.0))
 
-#     def forward(self, feat_map, cam_feat_map):
-#         B, C, H, W = cam_feat_map.shape
+    def forward(self, feat_map, cam_feat_map):
+        B, C, H, W = cam_feat_map.shape
 
-#         # 特征变换 + rearrange维度展平（这部分和之前一致，无需修改）
-#         q = self.to_q(feat_map)  # [B, mid, H, W]
-#         q = rearrange(q, "b c h w -> b c (h w)")  # [B, mid, H*W] (b c j)
+        cam_feat_map_flat = rearrange(cam_feat_map, "b c h w -> b c (h w)")
+        feat_map_flat = rearrange(feat_map, "b c h w -> b c (h w)")
+        feat_map_flat_T = rearrange(feat_map, "b c h w -> b (h w) c")
 
-#         k = self.to_k(feat_map)  # [B, mid, H, W]
-#         k = rearrange(k, "b c h w -> b (h w) c")  # [B, H*W, mid] (b i c)
+        attn = torch.einsum("b i n, b n j -> b i j", cam_feat_map_flat, feat_map_flat_T)
+        attn = torch.softmax(attn, dim=-1)
 
-#         v = rearrange(cam_feat_map, "b c h w -> b c (h w)")  # [B, C, H*W]
+        refined_cam_feat_map = torch.einsum("b i j, b j n -> b i n", attn, feat_map_flat)
+        refined_cam_feat_map = rearrange(refined_cam_feat_map, "b c (h w) -> b c h w", h=H, w=W)
 
-#         attn = torch.einsum("b i c, b c j -> b i j", k, q)  # [B, H*W, H*W]
-#         attn = torch.softmax(attn, dim=-1)
-
-#         refined_cam_feat_map = torch.einsum("b c i, b i j -> b c j", v, attn)
-#         refined_cam_feat_map = rearrange(refined_cam_feat_map, "b c (h w) -> b c h w", h=H, w=W)
-
-#         return self.alpha * refined_cam_feat_map + cam_feat_map
+        return self.alpha * refined_cam_feat_map + cam_feat_map
 
 
 # # 3. 双重注意力模块
 class Correction_Net(nn.Module):
     def __init__(self, feat_i_dim):
         super().__init__()
-        self.spatial_attn = Spatial_Attention(feat_i_dim)
-        # self.channel_attn = Channel_Attention()
+        # self.spatial_attn = Spatial_Attention(feat_i_dim)
+        self.channel_attn = Channel_Attention()
 
     def forward(self, feat_map, cam_feat_map):
         # cam_feat_map = (self.spatial_attn(cam, feat) + self.channel_attn(cam, feat)) / 2
-        cam_feat_map = self.spatial_attn(feat_map, cam_feat_map)
-        # cam_feat_map = self.channel_attn(feat_map, cam_feat_map)
+        # cam_feat_map = self.spatial_attn(feat_map, cam_feat_map)
+        cam_feat_map = self.channel_attn(feat_map, cam_feat_map)
         return cam_feat_map
 
 
