@@ -26,10 +26,12 @@ class Spatial_Attention(nn.Module):
         attn = torch.einsum("b i c, b c j -> b i j", f1_flat_T, f2_flat)
         attn = torch.softmax(attn, dim=-1)
 
-        cam_flat_T = rearrange(cam, "b c h w -> b (h w) c")
-
-        cam_refined_flat = torch.einsum("b i j, b j c -> b i c", attn, cam_flat_T)
-        cam_refined = rearrange(cam_refined_flat, "b (h w) c -> b c h w", h=H, w=W)
+        # cam_flat_T = rearrange(cam, "b c h w -> b (h w) c")
+        # cam_refined_flat = torch.einsum("b i j, b j c -> b i c", attn, cam_flat_T)
+        # cam_refined = rearrange(cam_refined_flat, "b (h w) c -> b c h w", h=H, w=W)
+        cam_flat = rearrange(cam, "b c h w -> b c (h w)")
+        cam_refined_flat = torch.einsum("b c i, b i j -> b c j", cam_flat, attn)
+        cam_refined = rearrange(cam_refined_flat, "b c (h w) -> b c h w", h=H, w=W)
 
         return self.alpha * cam_refined + cam
 
