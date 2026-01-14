@@ -17,16 +17,17 @@ class Spatial_Attention(nn.Module):
     def forward(self, feat, cam):
         B, C, H, W = cam.shape
 
-        f1 = self.to_q(feat)  # [B, mid, H, W]
-        f1 = rearrange(f1, "b mid h w -> b mid (h w)")  # [B, mid, H*W]
+        f1 = self.to_q(feat)
+        f1 = rearrange(f1, "b c h w -> b (h w) c")
 
-        f2 = self.to_k(feat)  # [B, mid, H, W]
-        f2 = rearrange(f2, "b mid h w -> b mid (h w)")  # [B, H*W, mid]
+        f2 = self.to_k(feat)
+        f2 = rearrange(f2, "b c h w -> b (h w) c")
 
-        attn = torch.einsum("b m i, b m j -> b i j", f1, f2)  # [B, H*W, H*W]
+        attn = torch.einsum("b i c, b j c -> b i j", f1, f2)
         attn = torch.softmax(attn, dim=-1)
 
-        cam_flat = rearrange(cam, "b c h w -> b (h w) c")  # [B, C, H*W]
+        cam_flat = rearrange(cam, "b c h w -> b (h w) c")
+
         cam_refined_flat = torch.einsum(" b i j, b j c -> b i c", attn, cam_flat)
         cam_refined = rearrange(cam_refined_flat, "b (h w) c -> b c h w", h=H, w=W)
 
