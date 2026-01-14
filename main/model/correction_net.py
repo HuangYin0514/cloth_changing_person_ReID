@@ -50,7 +50,7 @@ class Channel_Attention(nn.Module):
 
         # refined_cam_feat_map = torch.einsum("b i j, b j n -> b i n", attn, feat_map_flat)
         # refined_cam_feat_map = rearrange(refined_cam_feat_map, "b c (h w) -> b c h w", h=H, w=W)
-        refined_cam_feat_map = torch.einsum("b n i, b i j -> b n i", feat_map_flat_T, attn)
+        refined_cam_feat_map = torch.einsum("b n i, b i j -> b n j", feat_map_flat_T, attn)
         refined_cam_feat_map = rearrange(refined_cam_feat_map, "b (h w) c -> b c h w", h=H, w=W)
         return self.alpha * refined_cam_feat_map + cam_feat_map
 
