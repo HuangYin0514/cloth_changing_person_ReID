@@ -14,64 +14,62 @@ class Spatial_Attention(nn.Module):
         self.to_k = nn.Conv2d(feat_channels, mid_channels, 1, bias=False)
         self.alpha = nn.Parameter(torch.tensor(1.0))
 
-    def forward(self, feat_map, cam_feat_map):
-        B, C, H, W = cam_feat_map.shape
+    def forward(self, feat, cam):
+        B, C, H, W = cam.shape
 
-        q = self.to_q(feat_map)  # [B, mid, H_cam, W_cam]
-        q = rearrange(q, "b c h w -> b (h w) c")  # [B, N, mid]，N=H_cam*W_cam
+        f1 = self.to_q(feat)  # [B, mid, H, W]
+        f1 = rearrange(f1, "b mid h w -> b mid (h w)")  # [B, mid, H*W]
 
-        k = self.to_k(feat_map)  # [B, mid, H_cam, W_cam]
-        k = rearrange(k, "b c h w -> b c (h w)")  # [B, mid, N]
+        f2 = self.to_k(feat)  # [B, mid, H, W]
+        f2 = rearrange(f2, "b mid h w -> b mid (h w)")  # [B, H*W, mid]
 
-        v = rearrange(cam_feat_map, "b c h w -> b c (h w)")  # [B, C_cam, N]
-
-        attn = torch.einsum("b i c, b c j -> b i j", q, k)  # [B, H*W, H*W]
+        attn = torch.einsum("b m i, b m j -> b i j", f1, f2)  # [B, H*W, H*W]
         attn = torch.softmax(attn, dim=-1)
 
-        refined_cam_feat_map = torch.einsum("b c i, b i j -> b c j", v, attn)
-        refined_cam_feat_map = rearrange(refined_cam_feat_map, "b c (h w) -> b c h w", h=H, w=W)
+        cam_flat = rearrange(cam, "b c h w -> b (h w) c")  # [B, C, H*W]
+        cam_refined_flat = torch.einsum(" b i j, b j c -> b i c", attn, cam_flat)
+        cam_refined = rearrange(cam_refined_flat, "b (h w) c -> b c h w", h=H, w=W)
 
-        return self.alpha * refined_cam_feat_map + cam_feat_map
+        return self.alpha * cam_refined + cam
 
 
 # class Channel_Attention(nn.Module):
-#     def __init__(self, feat_channels):
+#     def __init__(self):
 #         super().__init__()
-#         # 注意力权重系数，初始值设为0.1，避免初始时残差占比过高
-#         self.alpha = nn.Parameter(torch.tensor(0.1))
-#         self.feat_channels = feat_channels  # 记录通道数，用于维度校验
+#         self.alpha = nn.Parameter(torch.tensor(1.0))
 
 #     def forward(self, feat_map, cam_feat_map):
 #         B, C, H, W = cam_feat_map.shape
 
-#         # 1. 展平空间维度：[B, C, H, W] -> [B, C, N]
-#         feat_flat = rearrange(feat_map, "b c h w -> b c (h w)")  # 参考特征 [B, C, N]
-#         cam_feat_flat = rearrange(cam_feat_map, "b c h w -> b c (h w)")  # 目标特征 [B, C, N]
+#         # 特征变换 + rearrange维度展平（这部分和之前一致，无需修改）
+#         q = self.to_q(feat_map)  # [B, mid, H, W]
+#         q = rearrange(q, "b c h w -> b c (h w)")  # [B, mid, H*W] (b c j)
 
-#         # 2. 计算通道注意力权重（通道间相似度）
-#         attn_weight = torch.einsum("b c1 n, b c2 n -> b c1 c2", feat_flat, cam_feat_flat)  # [B, C, C]
-#         # 对每个c1对应的c2维度做softmax，确保通道注意力权重归一化
-#         attn_weight = torch.softmax(attn_weight, dim=-1)  # dim=2 对应c2维度（目标通道）
+#         k = self.to_k(feat_map)  # [B, mid, H, W]
+#         k = rearrange(k, "b c h w -> b (h w) c")  # [B, H*W, mid] (b i c)
 
-#         # 3. 特征加权：用注意力权重加权目标特征
-#         refined_cam_feat_flat = torch.einsum("b c2 n, b c1 c2 -> b c1 n", cam_feat_flat, attn_weight)
-#         refined_cam_feat_map = rearrange(refined_cam_feat_flat, "b c (h w) -> b c h w", h=H, w=W)
+#         v = rearrange(cam_feat_map, "b c h w -> b c (h w)")  # [B, C, H*W]
 
-#         # 残差连接：注意力加权特征 + 原始特征
-#         output = self.alpha * refined_cam_feat_map + cam_feat_map
-#         return output
+#         attn = torch.einsum("b i c, b c j -> b i j", k, q)  # [B, H*W, H*W]
+#         attn = torch.softmax(attn, dim=-1)
+
+#         refined_cam_feat_map = torch.einsum("b c i, b i j -> b c j", v, attn)
+#         refined_cam_feat_map = rearrange(refined_cam_feat_map, "b c (h w) -> b c h w", h=H, w=W)
+
+#         return self.alpha * refined_cam_feat_map + cam_feat_map
 
 
-# 3. 双重注意力模块
+# # 3. 双重注意力模块
 class Correction_Net(nn.Module):
     def __init__(self, feat_i_dim):
         super().__init__()
         self.spatial_attn = Spatial_Attention(feat_i_dim)
-        # self.channel_attn = ChannelAttentionRefinement()
+        # self.channel_attn = Channel_Attention()
 
     def forward(self, feat_map, cam_feat_map):
         # cam_feat_map = (self.spatial_attn(cam, feat) + self.channel_attn(cam, feat)) / 2
         cam_feat_map = self.spatial_attn(feat_map, cam_feat_map)
+        # cam_feat_map = self.channel_attn(feat_map, cam_feat_map)
         return cam_feat_map
 
 
