@@ -2,6 +2,7 @@ from multiprocessing import reduction
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from einops import rearrange  # 需要导入einops库
 
 
@@ -39,21 +40,32 @@ class Channel_Attention(nn.Module):
         self.alpha = nn.Parameter(torch.tensor(1.0))
 
     def forward(self, feat_map, cam_feat_map):
+        """
+        点积注意力计算
+        Args:
+            feat_map: 原始特征图，形状 [B, C, H, W]
+            cam_feat_map: CAM特征图，形状 [B, C, H, W]
+        Returns:
+            融合后的特征图，形状 [B, C, H, W]
+        """
         B, C, H, W = cam_feat_map.shape
 
-        cam_feat_map_flat = rearrange(cam_feat_map, "b c h w -> b c (h w)")
-        cam_feat_map_flat_T = rearrange(cam_feat_map, "b c h w -> b (h w) c")
-        feat_map_flat = rearrange(feat_map, "b c h w -> b c (h w)")
-        feat_map_flat_T = rearrange(feat_map, "b c h w -> b (h w) c")
+        # 1. 维度变换：将空间维度展平，便于计算点积 [B, C, H*W]
+        feat_flat = feat_map.view(B, C, H * W)  # 原始特征展平
+        cam_flat = cam_feat_map.view(B, C, H * W)  # CAM特征展平
 
-        # attn = torch.einsum("b i n, b n j -> b i j", cam_feat_map_flat, feat_map_flat_T)
-        attn = torch.einsum("b i n, b n j -> b i j", feat_map_flat, cam_feat_map_flat_T)
-        attn = torch.softmax(attn, dim=-1)
+        # 2. 点积注意力计算（通道维度的自注意力）
+        # 计算注意力分数：(B, C, H*W) * (B, H*W, C) = (B, C, C)
+        attn_scores = torch.bmm(feat_flat, cam_flat.transpose(1, 2))
+        # 归一化注意力分数（softmax在通道维度）
+        attn_scores = F.softmax(attn_scores / torch.sqrt(torch.tensor(C, dtype=torch.float32)), dim=-1)
 
-        # refined_cam_feat_map = torch.einsum("b i j, b j n -> b i n", attn, feat_map_flat)
-        # refined_cam_feat_map = rearrange(refined_cam_feat_map, "b c (h w) -> b c h w", h=H, w=W)
-        refined_cam_feat_map = torch.einsum("b n i, b i j -> b n j", cam_feat_map_flat_T, attn)
-        refined_cam_feat_map = rearrange(refined_cam_feat_map, "b (h w) c -> b c h w", h=H, w=W)
+        # 3. 应用注意力权重到CAM特征 [B, C, C] * [B, C, H*W] = [B, C, H*W]
+        refined_cam_flat = torch.bmm(attn_scores, cam_flat)
+        # 恢复原始空间维度 [B, C, H, W]
+        refined_cam_feat_map = refined_cam_flat.view(B, C, H, W)
+
+        # 4. 特征融合：注意力加权特征 + 原始CAM特征
         return self.alpha * refined_cam_feat_map + cam_feat_map
 
 
