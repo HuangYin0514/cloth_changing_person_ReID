@@ -27,7 +27,7 @@ class Dot_Product_Attention(nn.Module):
 
         v = rearrange(cam_feat_map, "b c h w -> b c (h w)")  # [B, C, H*W]
 
-        attn = torch.einsum("b c j, b i c -> b i j", q, k)  # 结果仍为 [B, H*W, H*W]
+        attn = torch.einsum("b i c, b c j -> b i j", k, q)  # [B, H*W, H*W]
         attn = torch.softmax(attn, dim=-1)
 
         refined_cam_feat_map = torch.einsum("b c i, b i j -> b c j", v, attn)
