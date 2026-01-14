@@ -10,60 +10,46 @@ class Spatial_Attention(nn.Module):
     def __init__(self, feat_channels, reduction_ratio=16):
         super().__init__()
         mid_channels = feat_channels // reduction_ratio
-
-        self.to_q = nn.Conv2d(feat_channels, mid_channels, 1, bias=False)
-        self.to_k = nn.Conv2d(feat_channels, mid_channels, 1, bias=False)
+        self.conv_f1 = nn.Conv2d(feat_channels, mid_channels, 1, bias=False)
+        self.conv_f2 = nn.Conv2d(feat_channels, mid_channels, 1, bias=False)
         self.alpha = nn.Parameter(torch.tensor(1.0))
 
-    def forward(self, feat, cam):
-        B, C, H, W = cam.shape
-
-        f1 = self.to_q(feat)
-        f1_flat_T = rearrange(f1, "b c h w -> b (h w) c")
-
-        f2 = self.to_k(feat)
-        f2_flat = rearrange(f2, "b c h w -> b c (h w)")
-
-        attn = torch.einsum("b i c, b c j -> b i j", f1_flat_T, f2_flat)
-        attn = torch.softmax(attn, dim=-1)
-
-        cam_flat = rearrange(cam, "b c h w -> b c (h w)")
-        cam_refined_flat = torch.einsum("b c i, b i j -> b c j", cam_flat, attn)
-        cam_refined = rearrange(cam_refined_flat, "b c (h w) -> b c h w", h=H, w=W)
-
-        return self.alpha * cam_refined + cam
+    def forward(self, feat_map, cam_feat_map):
+        B, C, H, W = feat_map.shape
+        # 特征变换+展平
+        f1 = self.conv_f1(feat_map).flatten(2)  # [B, mid, H*W]
+        f2 = self.conv_f2(feat_map).flatten(2).transpose(1, 2)  # [B, H*W, mid]
+        # 空间注意力矩阵
+        attn = torch.bmm(f2, f1)  # [B, H*W, H*W]
+        attn = torch.softmax(attn, dim=-1)  # 用torch.softmax彻底避免歧义
+        # 应用注意力
+        cam_feat_map_flat = cam_feat_map.flatten(2)
+        cam_feat_map_refined = torch.bmm(cam_feat_map_flat, attn).unflatten(2, (H, W))
+        return self.alpha * cam_feat_map_refined + cam
 
 
 class Channel_Attention(nn.Module):
     def __init__(self):
         super().__init__()
-        self.alpha = nn.Parameter(torch.tensor(1.0))
+        self.alpha = nn.Parameter(torch.tensor(0.0))
+        self.scale = 2048**-0.5
+        self.dropout = nn.Dropout(0.1)
 
     def forward(self, feat_map, cam_feat_map):
-        """
-        点积注意力计算
-        Args:
-            feat_map: 原始特征图，形状 [B, C, H, W]
-            cam_feat_map: CAM特征图，形状 [B, C, H, W]
-        Returns:
-            融合后的特征图，形状 [B, C, H, W]
-        """
         B, C, H, W = cam_feat_map.shape
 
-        # 1. 维度变换：将空间维度展平，便于计算点积 [B, C, H*W]
-        feat_flat = feat_map.view(B, C, H * W)  # 原始特征展平
-        cam_flat = cam_feat_map.view(B, C, H * W)  # CAM特征展平
+        # 1. 维度变换
+        feat_flat = feat_map.view(B, C, H * W)  # [B, C, H*W]
+        cam_flat = cam_feat_map.view(B, C, H * W)  # [B, C, H*W]
 
         # 2. 点积注意力计算（通道维度的自注意力）
-        # 计算注意力分数：(B, C, H*W) * (B, H*W, C) = (B, C, C)
-        attn_scores = torch.bmm(feat_flat, cam_flat.transpose(1, 2))
-        # 归一化注意力分数（softmax在通道维度）
-        attn_scores = F.softmax(attn_scores / torch.sqrt(torch.tensor(C, dtype=torch.float32)), dim=-1)
+        attn_scores = torch.bmm(cam_flat, feat_flat.transpose(1, 2)) * self.scale  # (B, C, H*W) * (B, H*W, C) = (B, C, C)
+        attn_scores = F.softmax(attn_scores, dim=-1)
+        attn_scores = self.dropout(attn_scores)
 
-        # 3. 应用注意力权重到CAM特征 [B, C, C] * [B, C, H*W] = [B, C, H*W]
-        refined_cam_flat = torch.bmm(attn_scores, cam_flat)
-        # 恢复原始空间维度 [B, C, H, W]
-        refined_cam_feat_map = refined_cam_flat.view(B, C, H, W)
+        # 3. 应用注意力权重到CAM特征
+        refined_cam_flat = torch.bmm(attn_scores, feat_flat)  # [B, C, C] * [B, C, H*W] = [B, C, H*W]
+        refined_cam_feat_map = refined_cam_flat.view(B, C, H, W)  # [B, C, H, W]
 
         # 4. 特征融合：注意力加权特征 + 原始CAM特征
         return self.alpha * refined_cam_feat_map + cam_feat_map
