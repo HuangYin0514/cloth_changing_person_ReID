@@ -30,7 +30,7 @@ class Spatial_Attention(nn.Module):
         cam_flat = rearrange(cam, "b c h w -> b c (h w)")
 
         cam_refined_flat = torch.einsum("b c n1, b n1 n2 -> b c n2", cam_flat, attn)
-        cam_refined = rearrange(cam_refined_flat, "b (h w) c -> b c h w", h=H, w=W)
+        cam_refined = rearrange(cam_refined_flat, "b c (h w) -> b c h w", h=H, w=W)
 
         return self.alpha * cam_refined + cam
 
