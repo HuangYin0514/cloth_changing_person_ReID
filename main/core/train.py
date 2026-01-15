@@ -37,10 +37,10 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
 
             # 衣服定位
             clothe_feat_map = reid_net.clothe_cam_position(backbone_feat_map, clotheid, clothe_base.clothe_classifier)
+            unclothe_cam_feat = reid_net.clothe_cam_pool(clothe_feat_map).view(B, reid_net.GLOBAL_DIM)
 
             # 去除衣服
-            unclothe_cam_feat_map = backbone_feat_map - clothe_feat_map
-            unclothe_cam_feat = reid_net.clothe_cam_pool(unclothe_cam_feat_map).view(B, reid_net.GLOBAL_DIM)
+            unclothe_cam_feat = global_feat - unclothe_cam_feat
 
             unclothe_cam_feat_bn_feat = reid_net.clothe_cam_bn_neck(unclothe_cam_feat)
             unclothe_cam_cls_score = reid_net.clothe_cam_classifier(unclothe_cam_feat_bn_feat)
