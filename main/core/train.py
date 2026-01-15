@@ -36,21 +36,14 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             clothe_base.optimizer.step()
 
             # 衣服定位
-            clothe_feat_map = reid_net.clothe_position(backbone_feat_map, clotheid, clothe_base.clothe_classifier)
+            clothe_feat_map = reid_net.clothe_cam_position(backbone_feat_map, clotheid, clothe_base.clothe_classifier)
 
-            # 区域校准
-            clothe_feat_map = reid_net.clothe_correction(backbone_feat_map, clothe_feat_map)
+            # 去除衣服
+            unclothe_cam_feat_map = backbone_feat_map - clothe_feat_map
+            unclothe_cam_feat = reid_net.clothe_cam_pool(unclothe_cam_feat_map).view(B, reid_net.GLOBAL_DIM)
 
-            # 非衣服区域约束
-            unclothe_cam_feat_map = backbone_feat_map + reid_net.unclothe_cbr(backbone_feat_map - clothe_feat_map)
-            # unclothe_cam_feat_map = backbone_feat_map - clothe_feat_map
-
-            # 双次差分
-            # unclothe_cam_feat_map = reid_net.doule_difference(backbone_feat_map, unclothe_cam_feat_map)
-
-            unclothe_cam_feat = reid_net.unclothe_pool(unclothe_cam_feat_map).view(B, reid_net.GLOBAL_DIM)
-            unclothe_cam_feat_bn_feat = reid_net.unclothe_bn_neck(unclothe_cam_feat)
-            unclothe_cam_cls_score = reid_net.unclothe_classifier(unclothe_cam_feat_bn_feat)
+            unclothe_cam_feat_bn_feat = reid_net.clothe_cam_bn_neck(unclothe_cam_feat)
+            unclothe_cam_cls_score = reid_net.clothe_cam_classifier(unclothe_cam_feat_bn_feat)
             unclothe_cam_id_loss = criterion.ce_ls(unclothe_cam_cls_score, pid)
             meter.update({"unclothe_cam_id_loss": unclothe_cam_id_loss.item()})
             total_loss += unclothe_cam_id_loss

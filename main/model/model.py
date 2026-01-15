@@ -3,10 +3,7 @@ import torch.nn as nn
 
 from .bn_neck import BN_Neck
 from .cam import CAM
-from .cbr import CBR
 from .classifier import Linear_Classifier
-from .correction_net import Correction_Net
-from .double_difference import DoubleDifferenceModule
 from .gem_pool import GeneralizedMeanPoolingP
 from .pool_attention import Pool_Attention
 from .resnet import resnet50
@@ -30,18 +27,11 @@ class ReID_Net(nn.Module):
         self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
-        # ------------- 定位 -----------------------
-        self.clothe_position = CAM()
-
-        # ------------- 校准 -----------------------
-        self.clothe_correction = Correction_Net(self.GLOBAL_DIM)
-
-        # ------------- 非衣服区域约束 -----------------------
-        self.unclothe_cbr = CBR(self.GLOBAL_DIM, self.GLOBAL_DIM, 1, 1, 0)
-        self.doule_difference = DoubleDifferenceModule(self.GLOBAL_DIM)
-        self.unclothe_pool = GeneralizedMeanPoolingP()
-        self.unclothe_bn_neck = BN_Neck(self.GLOBAL_DIM)
-        self.unclothe_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
+        # ------------- Cloth cam position -----------------------
+        self.clothe_cam_position = CAM()
+        self.clothe_cam_pool = GeneralizedMeanPoolingP()
+        self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
+        self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
