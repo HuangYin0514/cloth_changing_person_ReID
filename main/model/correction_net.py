@@ -43,16 +43,16 @@ class ParallelPolarizedSelfAttention(nn.Module):
         # spatial_out = self.alpha * spatial_weight * cam_feat_map + cam_feat_map
 
         # Channel-only Self-Attention
-        channel_wv = self.ch_wv(global_feat_map)  # bs,c//2,h,w
-        channel_wq = self.ch_wq(global_feat_map)  # bs,1,h,w
-        channel_wv = channel_wv.reshape(b, c // 2, -1)  # bs,c//2,h*w
-        channel_wq = channel_wq.reshape(b, -1, 1)  # bs,h*w,1
-        channel_wq = self.softmax_channel(channel_wq)
-        channel_wz = torch.matmul(channel_wv, channel_wq).unsqueeze(-1)  # bs,c//2,1,1
-        channel_weight = self.sigmoid(self.ln(self.ch_wz(channel_wz).reshape(b, c, 1).permute(0, 2, 1))).permute(0, 2, 1).reshape(b, c, 1, 1)  # bs,c,1,1
-        channel_out = self.beta * channel_weight * cam_feat_map + cam_feat_map
+        # channel_wv = self.ch_wv(global_feat_map)  # bs,c//2,h,w
+        # channel_wq = self.ch_wq(global_feat_map)  # bs,1,h,w
+        # channel_wv = channel_wv.reshape(b, c // 2, -1)  # bs,c//2,h*w
+        # channel_wq = channel_wq.reshape(b, -1, 1)  # bs,h*w,1
+        # channel_wq = self.softmax_channel(channel_wq)
+        # channel_wz = torch.matmul(channel_wv, channel_wq).unsqueeze(-1)  # bs,c//2,1,1
+        # channel_weight = self.sigmoid(self.ln(self.ch_wz(channel_wz).reshape(b, c, 1).permute(0, 2, 1))).permute(0, 2, 1).reshape(b, c, 1, 1)  # bs,c,1,1
+        # channel_out = self.beta * channel_weight * cam_feat_map + cam_feat_map
 
-        out = channel_out
+        out = cam_feat_map
         return out
 
 
