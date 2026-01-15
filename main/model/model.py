@@ -4,6 +4,7 @@ import torch.nn as nn
 from .bn_neck import BN_Neck
 from .cam import CAM
 from .classifier import Linear_Classifier
+from .correction_net import Correction_Net
 from .gem_pool import GeneralizedMeanPoolingP
 from .pool_attention import Pool_Attention
 from .resnet import resnet50
@@ -32,6 +33,9 @@ class ReID_Net(nn.Module):
         self.clothe_cam_pool = GeneralizedMeanPoolingP()
         self.clothe_cam_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.clothe_cam_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
+
+        # ------------- 校准 -----------------------
+        self.clothe_correction = Correction_Net(self.GLOBAL_DIM)
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
