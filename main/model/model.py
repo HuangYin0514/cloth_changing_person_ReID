@@ -6,6 +6,7 @@ from .cam import CAM
 from .classifier import Linear_Classifier
 from .correction_net import Correction_Net
 from .gem_pool import GeneralizedMeanPoolingP
+from .instance_norm import Instance_Norm
 from .pool_attention import Pool_Attention
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
@@ -37,6 +38,9 @@ class ReID_Net(nn.Module):
         # ------------- 校准 -----------------------
         self.clothe_correction = Correction_Net(self.GLOBAL_DIM)
 
+        # ------------- IN -----------------------
+        self.inm = Instance_Norm(self.GLOBAL_DIM)
+
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
     #     backbone_feat_map = self.backbone(img)
@@ -47,6 +51,7 @@ class ReID_Net(nn.Module):
 
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
+        backbone_feat_map = self.inm(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
