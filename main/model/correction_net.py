@@ -21,7 +21,8 @@ class ParallelPolarizedSelfAttention(nn.Module):
         self.sp_wq = nn.Conv2d(channel, channel // 2, kernel_size=(1, 1))
         self.agp = nn.AdaptiveAvgPool2d((1, 1))
 
-        self.alpha = nn.Parameter(torch.tensor(0.01))
+        # self.alpha = nn.Parameter(torch.tensor(0.01))
+        self.alpha = 0.01
 
     def forward(self, global_feat_map, cam_feat_map):
         b, c, h, w = global_feat_map.size()
