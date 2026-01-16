@@ -39,7 +39,7 @@ class ReID_Net(nn.Module):
         self.clothe_correction = Correction_Net(self.GLOBAL_DIM)
 
         # ------------- IN -----------------------
-        self.inm = Instance_Norm(self.GLOBAL_DIM)
+        self.inm = Instance_Norm(self.GLOBAL_DIM, num_pid)
 
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
@@ -51,13 +51,12 @@ class ReID_Net(nn.Module):
 
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
-        backbone_feat_map = self.inm(backbone_feat_map)
+        in_feat_map, backbone_feat_map, unuseful_feat_map = self.inm(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
-
-            return backbone_feat_map, global_feat, global_bn_feat
+            return backbone_feat_map, global_feat, global_bn_feat, in_feat_map, unuseful_feat_map
         else:
             eval_feat_meter = []
             # ------------- Global -----------------------
