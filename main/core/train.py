@@ -39,7 +39,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             clothe_feat_map = reid_net.clothe_cam_position(backbone_feat_map, clotheid, clothe_base.clothe_classifier)
             clothe_feat_map = reid_net.clothe_correction(backbone_feat_map, clothe_feat_map)
 
-            unclothe_feat_map = backbone_feat_map - clothe_feat_map
+            unclothe_feat_map = torch.abs(backbone_feat_map - clothe_feat_map)
 
             unclothe_cam_feat = reid_net.clothe_cam_pool(unclothe_feat_map).view(B, reid_net.GLOBAL_DIM)
             unclothe_cam_feat_bn_feat = reid_net.clothe_cam_bn_neck(unclothe_cam_feat)
