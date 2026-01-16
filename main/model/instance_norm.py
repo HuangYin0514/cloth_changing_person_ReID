@@ -49,6 +49,20 @@ class Instance_Norm(nn.Module):
                     nn.init.constant_(m.bias, 0)
 
     def forward(self, feat_map):
+        # in_feat_map = self.IN(feat_map)
+
+        # diff_feat_map = feat_map - in_feat_map
+
+        # mask = self.mask1(diff_feat_map)
+        # useful_feat_map = diff_feat_map * mask
+        # unuseful_feat_map = diff_feat_map * (1 - mask)
+
+        # feat_map = in_feat_map + useful_feat_map
+        # unuseful_feat_map = in_feat_map + unuseful_feat_map
+
+        # return in_feat_map, feat_map, unuseful_feat_map
+
+        # ---------------------------------------------
         in_feat_map = self.IN(feat_map)
 
         diff_feat_map = feat_map - in_feat_map
@@ -57,8 +71,8 @@ class Instance_Norm(nn.Module):
         useful_feat_map = diff_feat_map * mask
         unuseful_feat_map = diff_feat_map * (1 - mask)
 
-        feat_map = in_feat_map + useful_feat_map
-        unuseful_feat_map = in_feat_map + unuseful_feat_map
+        feat_map = (in_feat_map + useful_feat_map) * 0.1 + feat_map * 0.9
+        unuseful_feat_map = (in_feat_map + unuseful_feat_map) * 0.1 + feat_map * 0.9
 
         return in_feat_map, feat_map, unuseful_feat_map
 
