@@ -7,6 +7,7 @@ class Mask(nn.Module):
         super(Mask, self).__init__()
 
         self.channel_attention = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(dim, dim // r, kernel_size=1, bias=False),
             nn.ReLU(inplace=True),
             nn.Conv2d(dim // r, dim, kernel_size=1, bias=False),
