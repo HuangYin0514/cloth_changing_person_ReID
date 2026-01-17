@@ -18,19 +18,24 @@ class ReID_Net(nn.Module):
 
         BACKBONE_TYPE = config.MODEL.BACKBONE_TYPE
 
-        # ------------- Backbone -----------------------
+        # ------------- 特征提取 -----------------------
         self.backbone = Backbone(BACKBONE_TYPE)
 
-        # ------------- 全局特征 -----------------------
+        # ------------- 全局信息 -----------------------
         self.GLOBAL_DIM = 2048
         self.global_pool = GeneralizedMeanPoolingP()
         self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
+    def heatmap(self, img):
+        B, C, H, W = img.shape
+        backbone_feat_map = self.backbone(img)
+        return backbone_feat_map
+
     def forward(self, img):
         B, C, H, W = img.shape
 
-        # ------------- 全局特征 -----------------------
+        # ------------- 全局信息 -----------------------
         backbone_feat_map = self.backbone(img)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
@@ -41,7 +46,6 @@ class ReID_Net(nn.Module):
             eval_feat_meter = []
             # ------------- Global -----------------------
             eval_feat_meter.append(global_bn_feat)
-
             eval_feat = torch.cat(eval_feat_meter, dim=1)
             return eval_feat
 
@@ -76,23 +80,10 @@ class Backbone(nn.Module):
         self.layer3 = resnet.layer3  # 6 blocks
         self.layer4 = resnet.layer4  # 3 blocks
 
-        # self.layer4_0 = self.layer4[0]
-        # self.layer4_1 = self.layer4[1]
-        # self.layer4_2 = self.layer4[2]
-
-        # self.pool_att_0 = Pool_Attention(pool_type="max", feature_dim=2048)
-        # self.pool_att_1 = Pool_Attention(pool_type="avg", feature_dim=2048)
-
     def forward(self, img):
         out = self.layer0(img)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
         out = self.layer4(out)
-
-        # out = self.layer4_0(out)
-        # out = self.pool_att_0(out)
-        # out = self.layer4_1(out)
-        # out = self.pool_att_1(out)
-        # out = self.layer4_2(out)
         return out
