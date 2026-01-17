@@ -26,8 +26,6 @@ class Instance_Norm(nn.Module):
         self.IN = nn.InstanceNorm2d(in_dim, affine=True)
         self.mask1 = Mask(2048)
 
-        self.alpha = nn.Parameter(torch.tensor(1.0))  # 差值项权重
-
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -81,7 +79,7 @@ class Instance_Norm(nn.Module):
 
         mask = self.mask1(feat_map)
 
-        feat_map = in_feat_map + self.alpha * mask * (feat_map - in_feat_map)
+        feat_map = in_feat_map + mask * (feat_map - in_feat_map)
 
         return feat_map + res_feat_map
 
