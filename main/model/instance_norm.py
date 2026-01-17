@@ -26,8 +26,7 @@ class Instance_Norm(nn.Module):
         self.IN = nn.InstanceNorm2d(in_dim, affine=True)
         self.mask1 = Mask(2048)
 
-        self.classifier = nn.Linear(2048, num_classes)
-        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.alpha = nn.Parameter(torch.tensor(1.0))  # 差值项权重
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -77,14 +76,14 @@ class Instance_Norm(nn.Module):
         # return in_feat_map, feat_map, unuseful_feat_map
 
         # ---------------------------------------------
+        res_feat_map = feat_map
         in_feat_map = self.IN(feat_map)
 
-        diff_feat_map = feat_map - in_feat_map
         mask = self.mask1(feat_map)
 
-        feat_map = in_feat_map + mask * (diff_feat_map)
+        feat_map = in_feat_map + self.alpha * mask * (feat_map - in_feat_map)
 
-        return feat_map
+        return feat_map + res_feat_map
 
     def loss(self, in_feat_map, feat_map, unuseful_feat_map):
         in_feat_score = F.softmax(self.classifier(self.avgpool(in_feat_map).view(unuseful_feat_map.size(0), -1)))
