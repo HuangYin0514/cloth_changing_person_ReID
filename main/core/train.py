@@ -18,7 +18,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
 
             backbone_feat_map, global_feat, global_bn_feat = reid_net(img)
 
-            # Global
+            # ------------- 全局特征 -----------------------
             global_cls_score = reid_net.global_classifier(global_bn_feat)
             global_id_loss = criterion.ce_ls(global_cls_score, pid)
             meter.update({"global_id_loss": global_id_loss.item()})
