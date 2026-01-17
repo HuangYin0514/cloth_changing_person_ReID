@@ -23,9 +23,10 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             global_id_loss = criterion.ce_ls(global_cls_score, pid)
             meter.update({"global_id_loss": global_id_loss.item()})
             total_loss += global_id_loss
-            global_tri_loss = criterion.tri(global_feat, pid)
-            meter.update({"global_tri_loss": global_tri_loss.item()})
-            total_loss += global_tri_loss
+            if epoch > 25:
+                global_tri_loss = criterion.tri(global_feat, pid)
+                meter.update({"global_tri_loss": global_tri_loss.item()})
+                total_loss += global_tri_loss
 
             # 衣服分类器
             clothe_cls_score = clothe_base.clothe_classifier(backbone_feat_map.detach())
@@ -37,23 +38,25 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
 
             # 衣服定位
             clothe_feat_map = reid_net.clothe_cam_position(backbone_feat_map, clotheid, clothe_base.clothe_classifier)
-            clothe_feat_map = reid_net.clothe_correction(backbone_feat_map, clothe_feat_map)
 
-            unclothe_feat_map = torch.abs(backbone_feat_map - clothe_feat_map)
-            unclothe_cam_feat = reid_net.clothe_cam_pool(unclothe_feat_map).view(B, reid_net.GLOBAL_DIM)
+            # 去除衣服
+            unclothe_cam_feat_map = torch.abs(backbone_feat_map - clothe_feat_map)
+            unclothe_cam_feat = reid_net.clothe_cam_pool(unclothe_cam_feat_map).view(B, reid_net.GLOBAL_DIM)
             unclothe_cam_feat_bn_feat = reid_net.clothe_cam_bn_neck(unclothe_cam_feat)
             unclothe_cam_cls_score = reid_net.clothe_cam_classifier(unclothe_cam_feat_bn_feat)
             unclothe_cam_id_loss = criterion.ce_ls(unclothe_cam_cls_score, pid)
             meter.update({"unclothe_cam_id_loss": unclothe_cam_id_loss.item()})
             total_loss += unclothe_cam_id_loss
-            unclothe_cam_tri_loss = criterion.tri(unclothe_cam_feat, pid)
-            meter.update({"unclothe_cam_tri_loss": unclothe_cam_tri_loss.item()})
-            total_loss += unclothe_cam_tri_loss
+            if epoch > 25:
+                unclothe_cam_tri_loss = criterion.tri(unclothe_cam_feat, pid)
+                meter.update({"unclothe_cam_tri_loss": unclothe_cam_tri_loss.item()})
+                total_loss += unclothe_cam_tri_loss
 
             # 蒸馏
-            propagation_loss = 0.1 * criterion.propagation(student_logits=global_cls_score, teacher_logits=unclothe_cam_cls_score)
-            meter.update({"propagation_loss": propagation_loss.item()})
-            total_loss += propagation_loss
+            if epoch > 25:
+                propagation_loss = 0.1 * criterion.propagation(student_logits=global_cls_score, teacher_logits=unclothe_cam_cls_score)
+                meter.update({"propagation_loss": propagation_loss.item()})
+                total_loss += propagation_loss
 
             optimizer.zero_grad()
             total_loss.backward()
