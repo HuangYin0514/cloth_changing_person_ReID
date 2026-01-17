@@ -16,7 +16,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             B, C, H, W = img.size()
             total_loss = 0
 
-            backbone_feat_map, global_feat, global_bn_feat, in_feat_map, unuseful_feat_map = reid_net(img)
+            backbone_feat_map, global_feat, global_bn_feat = reid_net(img)
 
             # Global
             global_cls_score = reid_net.global_classifier(global_bn_feat)
@@ -28,9 +28,9 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             total_loss += global_tri_loss
 
             # 实例归一化
-            in_loss = reid_net.inm.loss(in_feat_map, backbone_feat_map, unuseful_feat_map)
-            meter.update({"in_loss": in_loss.item()})
-            total_loss += in_loss
+            # in_loss = reid_net.inm.loss(in_feat_map, backbone_feat_map, unuseful_feat_map)
+            # meter.update({"in_loss": in_loss.item()})
+            # total_loss += in_loss
 
             # 衣服分类器
             clothe_cls_score = clothe_base.clothe_classifier(backbone_feat_map.detach())

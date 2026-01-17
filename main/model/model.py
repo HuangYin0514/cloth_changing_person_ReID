@@ -51,12 +51,12 @@ class ReID_Net(nn.Module):
 
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
-        in_feat_map, backbone_feat_map, unuseful_feat_map = self.inm(backbone_feat_map)
+        backbone_feat_map = self.inm(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
         if self.training:
-            return backbone_feat_map, global_feat, global_bn_feat, in_feat_map, unuseful_feat_map
+            return backbone_feat_map, global_feat, global_bn_feat
         else:
             eval_feat_meter = []
             # ------------- Global -----------------------

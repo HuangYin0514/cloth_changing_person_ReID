@@ -63,18 +63,28 @@ class Instance_Norm(nn.Module):
         # return in_feat_map, feat_map, unuseful_feat_map
 
         # ---------------------------------------------
+        # in_feat_map = self.IN(feat_map)
+
+        # diff_feat_map = feat_map - in_feat_map
+
+        # mask = self.mask1(diff_feat_map)
+        # useful_feat_map = diff_feat_map * mask
+        # unuseful_feat_map = diff_feat_map * (1 - mask)
+
+        # feat_map = (in_feat_map + useful_feat_map) * 0.1 + feat_map * 0.9
+        # unuseful_feat_map = (in_feat_map + unuseful_feat_map) * 0.1 + feat_map * 0.9
+
+        # return in_feat_map, feat_map, unuseful_feat_map
+
+        # ---------------------------------------------
         in_feat_map = self.IN(feat_map)
 
-        diff_feat_map = feat_map - in_feat_map
+        # diff_feat_map = feat_map - in_feat_map
+        # mask = self.mask1(feat_map)
 
-        mask = self.mask1(diff_feat_map)
-        useful_feat_map = diff_feat_map * mask
-        unuseful_feat_map = diff_feat_map * (1 - mask)
+        feat_map = in_feat_map
 
-        feat_map = (in_feat_map + useful_feat_map) * 0.1 + feat_map * 0.9
-        unuseful_feat_map = (in_feat_map + unuseful_feat_map) * 0.1 + feat_map * 0.9
-
-        return in_feat_map, feat_map, unuseful_feat_map
+        return feat_map
 
     def loss(self, in_feat_map, feat_map, unuseful_feat_map):
         in_feat_score = F.softmax(self.classifier(self.avgpool(in_feat_map).view(unuseful_feat_map.size(0), -1)))
