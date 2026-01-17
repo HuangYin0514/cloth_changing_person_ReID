@@ -5,7 +5,6 @@ from torch.nn import functional as F
 from torch.nn import init
 
 from .bn_neck import BN_Neck
-from .gem_pool import GeneralizedMeanPoolingP
 from .weights_init import weights_init_classifier
 
 
@@ -14,7 +13,7 @@ class Clothe_Classifier(nn.Module):
         super(Clothe_Classifier, self).__init__()
 
         self.GLOBAL_DIM = 2048
-        self.global_pool = GeneralizedMeanPoolingP()
+        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
         self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, pid_num)
 

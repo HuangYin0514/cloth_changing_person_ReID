@@ -26,6 +26,14 @@ class ReID_Net(nn.Module):
         self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
+        # ------------- 衣服定位 -----------------------
+        self.clothe_position = CAM()
+
+        # ------------- 非衣服区域判别 -----------------------
+        self.unclothe_pool = GeneralizedMeanPoolingP()
+        self.unclothe_bn_neck = BN_Neck(self.GLOBAL_DIM)
+        self.unclothe_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
+
     def heatmap(self, img):
         B, C, H, W = img.shape
         backbone_feat_map = self.backbone(img)
