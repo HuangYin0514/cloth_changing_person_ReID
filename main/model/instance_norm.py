@@ -79,9 +79,9 @@ class Instance_Norm(nn.Module):
 
         mask = self.mask1(feat_map)
 
-        feat_map = in_feat_map + mask * (feat_map - in_feat_map)
+        feat_map = mask * feat_map + (1 - mask) * in_feat_map
 
-        return feat_map + res_feat_map
+        return feat_map
 
     def loss(self, in_feat_map, feat_map, unuseful_feat_map):
         in_feat_score = F.softmax(self.classifier(self.avgpool(in_feat_map).view(unuseful_feat_map.size(0), -1)))
