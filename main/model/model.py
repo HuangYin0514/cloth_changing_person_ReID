@@ -10,6 +10,7 @@ from .instance_norm import Instance_Norm
 from .pool_attention import Pool_Attention
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
+from .sfe import SFE
 
 
 class ReID_Net(nn.Module):
@@ -38,6 +39,8 @@ class ReID_Net(nn.Module):
         # ------------- 校准 -----------------------
         self.clothe_correction = Correction_Net(self.GLOBAL_DIM)
 
+        self.sfe = SFE(self.GLOBAL_DIM, self.GLOBAL_DIM)
+
     # def heatmap(self, img):
     #     B, C, H, W = img.shape
     #     backbone_feat_map = self.backbone(img)
@@ -48,6 +51,7 @@ class ReID_Net(nn.Module):
 
         # ------------- Global -----------------------
         backbone_feat_map = self.backbone(img)
+        backbone_feat_map = self.sfe(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
@@ -99,21 +103,16 @@ class Backbone(nn.Module):
         self.pool_att_0 = Pool_Attention(pool_type="max", feature_dim=2048)
         self.pool_att_1 = Pool_Attention(pool_type="avg", feature_dim=2048)
 
-        self.inm1 = Instance_Norm(1024)
-        self.inm2 = Instance_Norm(2048)
-
     def forward(self, img):
         out = self.layer0(img)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
         # out = self.layer4(out)
-        out = self.inm1(out)
 
         out = self.layer4_0(out)
         out = self.pool_att_0(out)
         out = self.layer4_1(out)
         out = self.pool_att_1(out)
         out = self.layer4_2(out)
-        out = self.inm2(out)
         return out
