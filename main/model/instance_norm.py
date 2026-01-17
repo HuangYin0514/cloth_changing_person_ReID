@@ -79,10 +79,10 @@ class Instance_Norm(nn.Module):
         # ---------------------------------------------
         in_feat_map = self.IN(feat_map)
 
-        # diff_feat_map = feat_map - in_feat_map
-        # mask = self.mask1(feat_map)
+        diff_feat_map = feat_map - in_feat_map
+        mask = self.mask1(feat_map)
 
-        feat_map = in_feat_map
+        feat_map = in_feat_map + mask * (diff_feat_map)
 
         return feat_map
 

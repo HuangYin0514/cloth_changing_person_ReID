@@ -27,11 +27,6 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             meter.update({"global_tri_loss": global_tri_loss.item()})
             total_loss += global_tri_loss
 
-            # 实例归一化
-            # in_loss = reid_net.inm.loss(in_feat_map, backbone_feat_map, unuseful_feat_map)
-            # meter.update({"in_loss": in_loss.item()})
-            # total_loss += in_loss
-
             # 衣服分类器
             clothe_cls_score = clothe_base.clothe_classifier(backbone_feat_map.detach())
             clothe_loss = clothe_base.criterion_ce(clothe_cls_score, clotheid)
