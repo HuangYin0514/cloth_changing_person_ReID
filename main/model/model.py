@@ -5,7 +5,6 @@ from .bn_neck import BN_Neck
 from .cam import CAM
 from .classifier import Linear_Classifier
 from .gem_pool import GeneralizedMeanPoolingP
-from .pool_attention import Pool_Attention
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
 
