@@ -31,7 +31,7 @@ Best model is: epoch: 79, mAP: 16.2357%, rank1: 36.2245%.
 class SpatialAttentionRefinement(nn.Module):
     def __init__(self, in_dim):
         super().__init__()
-        mid_dim = in_dim // 4
+        mid_dim = in_dim // 16
         self.conv_f1 = nn.Conv2d(in_dim, mid_dim, 1, bias=False)
         self.conv_f2 = nn.Conv2d(in_dim, mid_dim, 1, bias=False)
         self.alpha = nn.Parameter(torch.tensor(0.0))
