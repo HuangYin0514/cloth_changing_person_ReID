@@ -38,6 +38,9 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             # ------------- 衣服定位 -----------------------
             clothe_feat_map = reid_net.clothe_position(backbone_feat_map, clotheid, clothe_base.clothe_classifier)
 
+            # ------------- 衣服校准 -----------------------
+            clothe_feat_map = reid_net.clothe_correction(backbone_feat_map, clothe_feat_map)
+
             # ------------- 去除衣服 -----------------------
             unclothe_feat_map = torch.abs(backbone_feat_map - clothe_feat_map)
 
