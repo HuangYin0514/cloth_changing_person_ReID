@@ -7,6 +7,9 @@ from einops import rearrange  # 需要导入einops库
 
 
 class ParallelPolarizedSelfAttention(nn.Module):
+    """
+    https://arxiv.org/pdf/2107.00782
+    """
 
     def __init__(self, channel=2048):
         super().__init__()
@@ -28,7 +31,7 @@ class ParallelPolarizedSelfAttention(nn.Module):
 
         # Spatial-only Self-Attention
         spatial_wv = self.sp_wv(global_feat_map)  # bs,c//2,h,w
-        spatial_wq = self.sp_wq(global_feat_map)  # bs,c//2,h,w
+        spatial_wq = self.sp_wq(cam_feat_map)  # bs,c//2,h,w
         spatial_wq = self.agp(spatial_wq)  # bs,c//2,1,1
         spatial_wv = spatial_wv.reshape(b, c // 2, -1)  # bs,c//2,h*w
         spatial_wq = spatial_wq.permute(0, 2, 3, 1).reshape(b, 1, c // 2)  # bs,1,c//2
