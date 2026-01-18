@@ -12,7 +12,7 @@ class SpatialAttentionRefinement(nn.Module):
         mid_dim = in_dim // 16
         self.conv_f1 = nn.Conv2d(in_dim, mid_dim, 1, bias=False)
         self.conv_f2 = nn.Conv2d(in_dim, mid_dim, 1, bias=False)
-        self.alpha = nn.Parameter(torch.tensor(0.0))
+        # self.alpha = nn.Parameter(torch.tensor(0.0))
 
     def forward(self, feat_map, cam_feat_map):
         B, C, H, W = cam_feat_map.shape
@@ -28,7 +28,7 @@ class SpatialAttentionRefinement(nn.Module):
         # 应用注意力
         cam_flat = cam_feat_map.flatten(2)  # [B, C, H*W]
         cam_refined = torch.matmul(cam_flat, attn).unflatten(2, (H, W))  # [B, C, H, W]
-        return 0.01 * self.alpha * cam_refined + cam_feat_map
+        return 0.01 * cam_refined + cam_feat_map
 
 
 # # 3. 双重注意力模块
