@@ -4,7 +4,6 @@ import torch.nn as nn
 from .bn_neck import BN_Neck
 from .cam import CAM
 from .classifier import Linear_Classifier
-from .correction_net import Correction_Net
 from .gem_pool import GeneralizedMeanPoolingP
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
@@ -29,9 +28,6 @@ class ReID_Net(nn.Module):
 
         # ------------- 衣服定位 -----------------------
         self.clothe_position = CAM()
-
-        # ------------- 衣服校准 -----------------------
-        self.clothe_correction = Correction_Net(self.GLOBAL_DIM)
 
         # ------------- 非衣服区域判别 -----------------------
         self.unclothe_pool = GeneralizedMeanPoolingP()
