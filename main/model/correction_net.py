@@ -21,7 +21,7 @@ Best model is: epoch: 79, mAP: 16.2357%, rank1: 36.2245%.
 171 空间注意力  0.01 * cam_refined + cam_feat_map
 0.15465 0.34184
 
-172 空间注意力  0.001 * cam_refined + cam_feat_map
+173 空间注意力  0.001 * self.alpha * cam_refined + cam_feat_map
 
 """
 # 171 0.01 * cam_refined + cam_feat_map
