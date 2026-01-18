@@ -6,63 +6,39 @@ import torch.nn.functional as F
 from einops import rearrange  # 需要导入einops库
 
 
-class ParallelPolarizedSelfAttention(nn.Module):
-    """
-    https://arxiv.org/pdf/2107.00782
-    """
-
-    def __init__(self, channel=2048):
+class SpatialAttentionRefinement(nn.Module):
+    def __init__(self, in_dim):
         super().__init__()
-        self.ch_wv = nn.Conv2d(channel, channel // 2, kernel_size=(1, 1))
-        self.ch_wq = nn.Conv2d(channel, 1, kernel_size=(1, 1))
-        self.softmax_channel = nn.Softmax(1)
-        self.softmax_spatial = nn.Softmax(-1)
-        self.ch_wz = nn.Conv2d(channel // 2, channel, kernel_size=(1, 1))
-        self.ln = nn.LayerNorm(channel)
-        self.sigmoid = nn.Sigmoid()
-        self.sp_wv = nn.Conv2d(channel, channel // 2, kernel_size=(1, 1))
-        self.sp_wq = nn.Conv2d(channel, channel // 2, kernel_size=(1, 1))
-        self.agp = nn.AdaptiveAvgPool2d((1, 1))
+        mid_dim = in_dim // 16
+        self.conv_f1 = nn.Conv2d(in_dim, mid_dim, 1, bias=False)
+        self.conv_f2 = nn.Conv2d(in_dim, mid_dim, 1, bias=False)
+        self.alpha = nn.Parameter(torch.tensor(0.0))
 
-        # self.alpha = nn.Parameter(torch.tensor(0.01))
+    def forward(self, feat_map, cam_feat_map):
+        B, C, H, W = cam_feat_map.shape
 
-    def forward(self, global_feat_map, cam_feat_map):
-        b, c, h, w = global_feat_map.size()
+        # 特征变换+展平
+        f1 = self.conv_f1(feat_map).flatten(2).transpose(1, 2)  # [B, mid, H*W]
+        f2 = self.conv_f2(feat_map).flatten(2)  # [B, H*W, mid]
 
-        # Spatial-only Self-Attention
-        spatial_wv = self.sp_wv(global_feat_map)  # bs,c//2,h,w
-        spatial_wq = self.sp_wq(cam_feat_map)  # bs,c//2,h,w
-        spatial_wq = self.agp(spatial_wq)  # bs,c//2,1,1
-        spatial_wv = spatial_wv.reshape(b, c // 2, -1)  # bs,c//2,h*w
-        spatial_wq = spatial_wq.permute(0, 2, 3, 1).reshape(b, 1, c // 2)  # bs,1,c//2
-        spatial_wq = self.softmax_spatial(spatial_wq)
-        spatial_wz = torch.matmul(spatial_wq, spatial_wv)  # bs,1,h*w
-        spatial_weight = self.sigmoid(spatial_wz.reshape(b, 1, h, w))  # bs,1,h,w
-        spatial_out = spatial_weight * cam_feat_map
+        # 空间注意力矩阵
+        attn = torch.matmul(f1, f2)  # [B, H*W, H*W]
+        attn = torch.softmax(attn, dim=-1)  # 用torch.softmax彻底避免歧义
 
-        # Channel-only Self-Attention
-        # channel_wv = self.ch_wv(global_feat_map)  # bs,c//2,h,w
-        # channel_wq = self.ch_wq(global_feat_map)  # bs,1,h,w
-        # channel_wv = channel_wv.reshape(b, c // 2, -1)  # bs,c//2,h*w
-        # channel_wq = channel_wq.reshape(b, -1, 1)  # bs,h*w,1
-        # channel_wq = self.softmax_channel(channel_wq)
-        # channel_wz = torch.matmul(channel_wv, channel_wq).unsqueeze(-1)  # bs,c//2,1,1
-        # channel_weight = self.sigmoid(self.ln(self.ch_wz(channel_wz).reshape(b, c, 1).permute(0, 2, 1))).permute(0, 2, 1).reshape(b, c, 1, 1)  # bs,c,1,1
-        # channel_out = channel_weight * cam_feat_map
-
-        out = spatial_out
-        return out
+        # 应用注意力
+        cam_flat = cam_feat_map.flatten(2)  # [B, C, H*W]
+        cam_refined = torch.matmul(cam_flat, attn).unflatten(2, (H, W))  # [B, C, H, W]
+        return self.alpha * cam_refined + cam_feat_map
 
 
 # # 3. 双重注意力模块
 class Correction_Net(nn.Module):
     def __init__(self, channel=2048):
         super().__init__()
-        # self.spatial_attn = Spatial_Attention(feat_i_dim)
-        self.att = ParallelPolarizedSelfAttention()
+        self.sar = SpatialAttentionRefinement(channel)
 
     def forward(self, global_feat_map, cam_feat_map):
-        cam_feat_map = self.att(global_feat_map, cam_feat_map)
+        cam_feat_map = self.sar(global_feat_map, cam_feat_map)
         return cam_feat_map
 
 
