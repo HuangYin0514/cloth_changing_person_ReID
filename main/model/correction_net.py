@@ -28,7 +28,7 @@ class SpatialAttentionRefinement(nn.Module):
         # 应用注意力
         cam_flat = cam_feat_map.flatten(2)  # [B, C, H*W]
         cam_refined = torch.matmul(cam_flat, attn).unflatten(2, (H, W))  # [B, C, H, W]
-        return self.alpha * cam_refined + cam_feat_map
+        return 0.01 * self.alpha * cam_refined + cam_feat_map
 
 
 # # 3. 双重注意力模块
