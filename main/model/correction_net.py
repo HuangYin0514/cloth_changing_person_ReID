@@ -30,8 +30,12 @@ Best model is: epoch: 79, mAP: 16.2357%, rank1: 36.2245%.
 0.16888 0.375
 
 174 修改注意力
+0.16163 0.38265
 
 175 修改注意力  cam_feat_map_flat_T = self.pa(global_feat_map_flat_T, cam_feat_map_flat_T, cam_feat_map_flat_T)
+0.17345 0.37755
+
+176 修改注意力 cam_feat_map_flat_T = self.pa(cam_feat_map_flat_T, global_feat_map_flat_T, global_feat_map_flat_T)
 
 
 """
@@ -51,7 +55,7 @@ class Correction_Net(nn.Module):
         # 空间校准
         global_feat_map_flat_T = global_feat_map.view(B, C, -1).permute(0, 2, 1)  # B, H*W, C
         cam_feat_map_flat_T = cam_feat_map.view(B, C, -1).permute(0, 2, 1)  # B, H*W, C
-        cam_feat_map_flat_T = self.pa(global_feat_map_flat_T, cam_feat_map_flat_T, cam_feat_map_flat_T)
+        cam_feat_map_flat_T = self.pa(cam_feat_map_flat_T, global_feat_map_flat_T, global_feat_map_flat_T)
         cam_feat_map = cam_feat_map_flat_T.permute(0, 2, 1).view(B, C, H, W)  # B, C, H, W
 
         refined_cam_feat_map = self.alpha * cam_feat_map + res_cam_feat_map
