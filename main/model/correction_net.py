@@ -39,7 +39,6 @@ Best model is: epoch: 79, mAP: 16.2357%, rank1: 36.2245%.
 
 177 修改注意力 cam_feat_map_flat_T = self.pa(cam_feat_map_flat_T, global_feat_map_flat_T, cam_feat_map_flat_T)
 
-
 """
 
 
