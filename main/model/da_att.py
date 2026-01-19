@@ -60,8 +60,7 @@ class PAM_Module_v2(Module):
         energy = torch.bmm(proj_query, proj_key)
         attention = self.softmax(energy)
 
-        proj_value = self.value_conv(x2).view(m_batchsize, -1, width * height)
-        # proj_value = x2.view(m_batchsize, -1, width * height)  # 修改部分!
+        proj_value = x2.view(m_batchsize, -1, width * height)  # 修改部分!
 
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
