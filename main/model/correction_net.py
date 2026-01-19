@@ -49,6 +49,8 @@ DANet github https://github.com/CASIA-IVA-Lab/DANet/blob/master/encoding/nn/da_a
 
 182 total_loss += correction_clothe_loss
 
+183 proj_value = self.value_conv(x2).view(m_batchsize, -1, width * height)
+
 """
 
 
