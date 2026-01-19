@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from einops import rearrange  # 需要导入einops库
 
-from .SelfAttention import ScaledDotProductAttention
+from .da_att import PAM_Module_v2
 
 """
 多头注意力：https://comate.baidu.com/zh/page/jizkw42dul8
@@ -39,6 +39,11 @@ Best model is: epoch: 79, mAP: 16.2357%, rank1: 36.2245%.
 
 177 修改注意力 cam_feat_map_flat_T = self.pa(cam_feat_map_flat_T, global_feat_map_flat_T, cam_feat_map_flat_T)
 
+178 修改注意力 
+https://arxiv.org/pdf/1809.02983
+DANet github https://github.com/CASIA-IVA-Lab/DANet/blob/master/encoding/nn/da_att.py#L19
+
+
 """
 
 
@@ -46,20 +51,11 @@ Best model is: epoch: 79, mAP: 16.2357%, rank1: 36.2245%.
 class Correction_Net(nn.Module):
     def __init__(self, channel=2048):
         super().__init__()
-        self.pa = ScaledDotProductAttention(channel, d_k=512, d_v=512, h=1)
-        self.alpha = nn.Parameter(torch.tensor(0.0))
+        self.pa = PAM_Module_v2(channel)
 
     def forward(self, global_feat_map, cam_feat_map):
         B, C, H, W = global_feat_map.shape
-        res_cam_feat_map = cam_feat_map
-
-        # 空间校准
-        global_feat_map_flat_T = global_feat_map.view(B, C, -1).permute(0, 2, 1)  # B, H*W, C
-        cam_feat_map_flat_T = cam_feat_map.view(B, C, -1).permute(0, 2, 1)  # B, H*W, C
-        cam_feat_map_flat_T = self.pa(cam_feat_map_flat_T, global_feat_map_flat_T, cam_feat_map_flat_T)
-        cam_feat_map = cam_feat_map_flat_T.permute(0, 2, 1).view(B, C, H, W)  # B, C, H, W
-
-        refined_cam_feat_map = self.alpha * cam_feat_map + res_cam_feat_map
+        refined_cam_feat_map = self.pa(global_feat_map, cam_feat_map)
         return refined_cam_feat_map
 
 
