@@ -43,6 +43,9 @@ Best model is: epoch: 79, mAP: 16.2357%, rank1: 36.2245%.
 https://arxiv.org/pdf/1809.02983
 DANet github https://github.com/CASIA-IVA-Lab/DANet/blob/master/encoding/nn/da_att.py#L19
 
+180 unclothe_feat_map = torch.clamp(backbone_feat_map - clothe_feat_map, min=0)
+
+181  out = self.gamma * out + (1 - self.gamma) * x2
 
 """
 
