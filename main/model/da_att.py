@@ -48,7 +48,8 @@ class PAM_Module_v2(Module):
     def forward(self, x, x2):
         """
         inputs :
-            x : input feature maps( B X C X H X W)
+            x : input feature maps(B, C, H, W)
+            x2 : input feature maps(B, C, H, W)
         returns :
             out : attention value + input feature
             attention: B X (HxW) X (HxW)
@@ -64,7 +65,7 @@ class PAM_Module_v2(Module):
         out = torch.bmm(proj_value, attention.permute(0, 2, 1))
         out = out.view(m_batchsize, C, height, width)
 
-        out = self.gamma * out + x
+        out = self.gamma * out + x2
         return out
 
 
