@@ -47,6 +47,8 @@ DANet github https://github.com/CASIA-IVA-Lab/DANet/blob/master/encoding/nn/da_a
 
 181  out = self.gamma * out + (1 - self.gamma) * x2
 
+182 total_loss += correction_clothe_loss
+
 """
 
 

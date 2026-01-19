@@ -40,6 +40,10 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
 
             # ------------- 衣服校准 -----------------------
             clothe_feat_map = reid_net.clothe_correction(backbone_feat_map, clothe_feat_map)
+            correction_clothe_cls_score = clothe_base.clothe_classifier(clothe_feat_map)
+            correction_clothe_loss = criterion.ce_ls(correction_clothe_cls_score, clotheid)
+            meter.update({"correction_clothe_loss": correction_clothe_loss.item()})
+            total_loss += correction_clothe_loss
 
             # ------------- 去除衣服 -----------------------
             unclothe_feat_map = torch.clamp(backbone_feat_map - clothe_feat_map, min=0)
