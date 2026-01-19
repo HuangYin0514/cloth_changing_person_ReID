@@ -42,7 +42,7 @@ def train(config, reid_net, train_loader, criterion, optimizer, scheduler, devic
             clothe_feat_map = reid_net.clothe_correction(backbone_feat_map, clothe_feat_map)
 
             # ------------- 去除衣服 -----------------------
-            unclothe_feat_map = torch.abs(backbone_feat_map - clothe_feat_map)
+            unclothe_feat_map = torch.clamp(backbone_feat_map - clothe_feat_map, min=0)
 
             # ------------- 非衣服区域判别 -----------------------
             unclothe_feat = reid_net.unclothe_pool(unclothe_feat_map).view(B, reid_net.GLOBAL_DIM)
