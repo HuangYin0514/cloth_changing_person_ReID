@@ -2,6 +2,12 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+"""
+os block https://github.com/MatthewAbugeja/osnet/blob/master/torchreid/models/osnet.py
+https://arxiv.org/pdf/1910.06827v5
+
+"""
+
 
 class Conv1x1(nn.Module):
     """1x1 convolution + bn + relu."""
