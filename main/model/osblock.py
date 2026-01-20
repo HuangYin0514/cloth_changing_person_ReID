@@ -35,7 +35,7 @@ class OSBlock(nn.Module):
             x2 = x2 + x2_ * w
 
         x3 = self.conv3(x2)
-        return x3
+        return x3 + x
 
 
 if __name__ == "__main__":
