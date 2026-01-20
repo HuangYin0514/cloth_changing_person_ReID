@@ -6,6 +6,7 @@ from .cam import CAM
 from .classifier import Linear_Classifier
 from .correction_net import Correction_Net
 from .gem_pool import GeneralizedMeanPoolingP
+from .osblock import OSBlock
 from .resnet import resnet50
 from .resnet_ibn_a import resnet50_ibn_a
 
@@ -38,6 +39,9 @@ class ReID_Net(nn.Module):
         self.unclothe_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.unclothe_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
+        # ------------- 多尺度信息 -----------------------
+        self.msi = OSBlock((2048, 24, 12))
+
     def heatmap(self, img):
         B, C, H, W = img.shape
         backbone_feat_map = self.backbone(img)
@@ -48,6 +52,7 @@ class ReID_Net(nn.Module):
 
         # ------------- 全局信息 -----------------------
         backbone_feat_map = self.backbone(img)
+        backbone_feat_map = self.msi(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
