@@ -40,7 +40,7 @@ class ReID_Net(nn.Module):
         self.unclothe_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
         # ------------- 多尺度信息 -----------------------
-        self.msi = OSBlock((2048, 24, 12))
+        self.msi = OSBlock(in_channels=2048, out_channels=2048)
 
     def heatmap(self, img):
         B, C, H, W = img.shape
