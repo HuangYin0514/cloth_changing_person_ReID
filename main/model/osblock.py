@@ -102,7 +102,7 @@ class ChannelGate(nn.Module):
 class OSBlock(nn.Module):
     """Omni-scale feature learning block."""
 
-    def __init__(self, in_channels, out_channels, IN=False, bottleneck_reduction=4, **kwargs):
+    def __init__(self, in_channels, out_channels, bottleneck_reduction=4, **kwargs):
         super(OSBlock, self).__init__()
         mid_channels = out_channels // bottleneck_reduction
         self.conv1 = Conv1x1(in_channels, mid_channels)
@@ -116,20 +116,8 @@ class OSBlock(nn.Module):
             LightConv3x3(mid_channels, mid_channels),
             LightConv3x3(mid_channels, mid_channels),
         )
-        self.conv2d = nn.Sequential(
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
-            LightConv3x3(mid_channels, mid_channels),
-        )
         self.gate = ChannelGate(mid_channels)
         self.conv3 = Conv1x1Linear(mid_channels, out_channels)
-        self.downsample = None
-        if in_channels != out_channels:
-            self.downsample = Conv1x1Linear(in_channels, out_channels)
-        self.IN = None
-        if IN:
-            self.IN = nn.InstanceNorm2d(out_channels, affine=True)
 
     def forward(self, x):
         identity = x
@@ -137,14 +125,9 @@ class OSBlock(nn.Module):
         x2a = self.conv2a(x1)
         x2b = self.conv2b(x1)
         x2c = self.conv2c(x1)
-        x2d = self.conv2d(x1)
-        x2 = self.gate(x2a) + self.gate(x2b) + self.gate(x2c) + self.gate(x2d)
+        x2 = self.gate(x2a) + self.gate(x2b) + self.gate(x2c)
         x3 = self.conv3(x2)
-        if self.downsample is not None:
-            identity = self.downsample(identity)
         out = x3 + identity
-        if self.IN is not None:
-            out = self.IN(out)
         return F.relu(out)
 
 
