@@ -24,10 +24,13 @@ https://github.com/xmu-xiaoma666/External-Attention-pytorch/blob/master/model/at
 0.17702
 0.39031
 
-194 平均池化
+194 平均池化 189复现
 output = self.sigmoid(avg_out)
 0.17963
 0.42602
 
 195  TripletAttention
 https://github.com/landskape-ai/triplet-attention/blob/master/MODELS/triplet_attention.py
+
+196 平均池化 189复现 120epoch
+output = self.sigmoid(avg_out)
