@@ -11,6 +11,10 @@ https://arxiv.org/pdf/1910.06827v5
 0.42602
 
 190 Multi-granularity Cross Transformer Network for person re-identification
+0.17243
+0.375
+
+191  return F.relu(out) + identity
 
 """
 
@@ -111,7 +115,7 @@ class OSBlock(nn.Module):
     def __init__(self, in_channels, out_channels, bottleneck_reduction=4, **kwargs):
         super(OSBlock, self).__init__()
         mid_channels = out_channels // bottleneck_reduction
-        self.conv1 = Conv1x1(in_channels, mid_channels)
+        self.conv_in = Conv1x1(in_channels, mid_channels)
         self.conv2a = LightConv3x3(mid_channels, mid_channels)
         self.conv2b = nn.Sequential(
             LightConv3x3(mid_channels, mid_channels),
@@ -122,19 +126,19 @@ class OSBlock(nn.Module):
             LightConv3x3(mid_channels, mid_channels),
             LightConv3x3(mid_channels, mid_channels),
         )
-        # self.gate = ChannelGate(mid_channels)
-        # self.conv3 = Conv1x1Linear(mid_channels, out_channels)
-
-        self.conv_out = Conv1x1(mid_channels * 3, out_channels)
+        self.gate = ChannelGate(mid_channels)
+        self.conv_out = Conv1x1Linear(mid_channels, out_channels)
 
     def forward(self, x):
         identity = x
-        x1 = self.conv1(x)
+        x1 = self.conv_in(x)
         x2a = self.conv2a(x1)
         x2b = self.conv2b(x1)
         x2c = self.conv2c(x1)
-        out = self.conv_out(torch.cat([x2a, x2b, x2c], dim=1))
-        return out
+        x2 = self.gate(x2a) + self.gate(x2b) + self.gate(x2c)
+        x3 = self.conv_out(x2)
+        out = x3
+        return F.relu(out) + identity
 
 
 if __name__ == "__main__":
