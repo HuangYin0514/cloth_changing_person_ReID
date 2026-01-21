@@ -21,3 +21,8 @@ https://github.com/xmu-xiaoma666/External-Attention-pytorch/blob/master/model/at
 
 193 修改att
 https://github.com/xmu-xiaoma666/External-Attention-pytorch/blob/master/model/attention/CBAM.py
+0.17702
+0.39031
+
+194 平均池化
+output = self.sigmoid(avg_out)

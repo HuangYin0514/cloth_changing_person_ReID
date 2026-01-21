@@ -63,21 +63,18 @@ class LightConv3x3(nn.Module):
 class ChannelAttention(nn.Module):
     def __init__(self, channel, reduction=16):
         super().__init__()
-        self.maxpool = nn.AdaptiveMaxPool2d(1)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.se = nn.Sequential(
-            nn.Conv2d(channel, channel // reduction, 1, bias=False),
+            nn.Conv2d(channel, channel // reduction, 1, bias=True),
             nn.ReLU(),
-            nn.Conv2d(channel // reduction, channel, 1, bias=False),
+            nn.Conv2d(channel // reduction, channel, 1, bias=True),
         )
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        max_result = self.maxpool(x)
         avg_result = self.avgpool(x)
-        max_out = self.se(max_result)
         avg_out = self.se(avg_result)
-        output = self.sigmoid(max_out + avg_out)
+        output = self.sigmoid(avg_out)
         return output * x
 
 
