@@ -16,5 +16,8 @@ https://arxiv.org/pdf/1910.06827v5
 0.17184
 0.37755
 
-192 修改att
+192 修改att [BUG]
+https://github.com/xmu-xiaoma666/External-Attention-pytorch/blob/master/model/attention/CBAM.py
+
+193 修改att
 https://github.com/xmu-xiaoma666/External-Attention-pytorch/blob/master/model/attention/CBAM.py

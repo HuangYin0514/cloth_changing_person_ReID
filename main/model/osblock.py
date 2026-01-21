@@ -65,7 +65,11 @@ class ChannelAttention(nn.Module):
         super().__init__()
         self.maxpool = nn.AdaptiveMaxPool2d(1)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.se = nn.Sequential(nn.Conv2d(channel, channel // reduction, 1, bias=False), nn.ReLU(), nn.Conv2d(channel // reduction, channel, 1, bias=False))
+        self.se = nn.Sequential(
+            nn.Conv2d(channel, channel // reduction, 1, bias=False),
+            nn.ReLU(),
+            nn.Conv2d(channel // reduction, channel, 1, bias=False),
+        )
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -74,7 +78,7 @@ class ChannelAttention(nn.Module):
         max_out = self.se(max_result)
         avg_out = self.se(avg_result)
         output = self.sigmoid(max_out + avg_out)
-        return output
+        return output * x
 
 
 class OSBlock(nn.Module):
