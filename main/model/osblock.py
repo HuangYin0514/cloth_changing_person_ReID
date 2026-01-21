@@ -7,6 +7,10 @@ os block https://github.com/MatthewAbugeja/osnet/blob/master/torchreid/models/os
 https://arxiv.org/pdf/1910.06827v5
 
 189 三个并行结构进行判别
+0.17963
+0.42602
+
+190 Multi-granularity Cross Transformer Network for person re-identification
 
 """
 
