@@ -6,6 +6,8 @@ from torch.nn import functional as F
 os block https://github.com/MatthewAbugeja/osnet/blob/master/torchreid/models/osnet.py
 https://arxiv.org/pdf/1910.06827v5
 
+189 三个并行结构进行判别
+
 """
 
 
@@ -116,8 +118,10 @@ class OSBlock(nn.Module):
             LightConv3x3(mid_channels, mid_channels),
             LightConv3x3(mid_channels, mid_channels),
         )
-        self.gate = ChannelGate(mid_channels)
-        self.conv3 = Conv1x1Linear(mid_channels, out_channels)
+        # self.gate = ChannelGate(mid_channels)
+        # self.conv3 = Conv1x1Linear(mid_channels, out_channels)
+
+        self.conv_out = Conv1x1(mid_channels * 3, out_channels)
 
     def forward(self, x):
         identity = x
@@ -125,10 +129,8 @@ class OSBlock(nn.Module):
         x2a = self.conv2a(x1)
         x2b = self.conv2b(x1)
         x2c = self.conv2c(x1)
-        x2 = self.gate(x2a) + self.gate(x2b) + self.gate(x2c)
-        x3 = self.conv3(x2)
-        out = x3 + identity
-        return F.relu(out)
+        out = self.conv_out(torch.cat([x2a, x2b, x2c], dim=1))
+        return out
 
 
 if __name__ == "__main__":
