@@ -2,6 +2,8 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
+from .triplet_attention import TripletAttention
+
 """
 os block https://github.com/MatthewAbugeja/osnet/blob/master/torchreid/models/osnet.py
 https://arxiv.org/pdf/1910.06827v5
@@ -95,7 +97,7 @@ class OSBlock(nn.Module):
             LightConv3x3(mid_channels, mid_channels),
             LightConv3x3(mid_channels, mid_channels),
         )
-        self.gate = ChannelAttention(mid_channels)
+        self.gate = TripletAttention(mid_channels)
         self.conv3 = Conv1x1Linear(mid_channels, out_channels)
 
     def forward(self, x):
