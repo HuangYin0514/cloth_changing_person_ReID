@@ -50,3 +50,8 @@ self.conv1 = nn.Conv2d(2, 1, 7, padding=3, bias=False)
 199 197的基础上改进
 pool_result = torch.cat([avg_result, max_result], dim=1)
 self.conv1 = nn.Conv2d(2, 1, 7, padding=3, bias=False)
+0.19106
+0.39796
+
+200 197改进
+self.conv1 = nn.Conv1d(2, 1, 5, 1, 2)
