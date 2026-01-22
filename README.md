@@ -38,4 +38,4 @@ output = self.sigmoid(avg_out)
 0.42092
 
 197 https://github.com/GuHY777/MFENet-VIReID/blob/main/model/mfenet_no2.py
-
+pool_result = torch.cat([avg_result, max_result], dim=1)
