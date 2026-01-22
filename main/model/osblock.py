@@ -78,18 +78,35 @@ class LightConv3x3(nn.Module):
 #         return output * x
 
 
+# class ChannelAttention(nn.Module):
+#     def __init__(self, channel, reduction=16):
+#         super().__init__()
+#         self.conv1 = nn.Conv2d(2, 1, 7, padding=3, bias=False)
+#         self.sigmoid = nn.Sigmoid()
+
+#     def forward(self, x):
+#         avg_out = torch.mean(x, dim=1, keepdim=True)
+#         max_out, _ = torch.max(x, dim=1, keepdim=True)
+#         out = torch.cat([avg_out, max_out], dim=1)
+#         out = self.sigmoid(self.conv1(out))
+#         return out * x
+
+
 class ChannelAttention(nn.Module):
     def __init__(self, channel, reduction=16):
         super().__init__()
-        self.conv1 = nn.Conv2d(2, 1, 7, padding=3, bias=False)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.maxpool = nn.AdaptiveMaxPool2d(1)
+        self.se = nn.Conv2d(2 * channel, 1 * channel, 7, padding=3, bias=False)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        avg_out = torch.mean(x, dim=1, keepdim=True)
-        max_out, _ = torch.max(x, dim=1, keepdim=True)
-        out = torch.cat([avg_out, max_out], dim=1)
-        out = self.sigmoid(self.conv1(out))
-        return out * x
+        avg_result = self.avgpool(x)
+        max_result = self.maxpool(x)
+        pool_result = torch.cat([avg_result, max_result], dim=1)
+        avg_out = self.se(pool_result)
+        output = self.sigmoid(avg_out)
+        return output * x
 
 
 class OSBlock(nn.Module):
