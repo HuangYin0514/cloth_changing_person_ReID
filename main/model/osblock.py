@@ -81,20 +81,25 @@ class LightConv3x3(nn.Module):
 class ChannelAttention(nn.Module):
     def __init__(self, channel, reduction=16):
         super().__init__()
-        self.conv1 = nn.Conv1d(2, 1, 5, 1, 2)
+        self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.maxpool = nn.AdaptiveMaxPool2d(1)
+        # self.se = nn.Sequential(
+        #     nn.Conv2d(channel * 2, channel // reduction, 1, bias=True),
+        #     nn.ReLU(),
+        #     nn.Conv2d(channel // reduction, channel, 1, bias=True),
+        # )
+        self.se = nn.Sequential(
+            nn.Conv2d(channel * 2, channel, 1, 1, 0, bias=True),
+        )
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        B, C, H, W = x.shape
-        out = torch.cat(
-            [
-                x.mean((2, 3)).view(B, 1, C),
-                x.amax((2, 3)).view(B, 1, C),
-            ],
-            dim=1,
-        )
-        out = self.sigmoid(self.conv1(out)).view(B, C, 1, 1)
-        return out * x
+        avg_result = self.avgpool(x)
+        max_result = self.maxpool(x)
+        pool_result = torch.cat([avg_result, max_result], dim=1)
+        avg_out = self.se(pool_result)
+        output = self.sigmoid(avg_out)
+        return output * x
 
 
 class OSBlock(nn.Module):
