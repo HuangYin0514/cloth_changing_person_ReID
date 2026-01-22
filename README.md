@@ -39,3 +39,8 @@ output = self.sigmoid(avg_out)
 
 197 https://github.com/GuHY777/MFENet-VIReID/blob/main/model/mfenet_no2.py
 pool_result = torch.cat([avg_result, max_result], dim=1)
+0.18935
+0.38776
+
+198 cbam sa
+self.conv1 = nn.Conv2d(2, 1, 7, padding=3, bias=False)
