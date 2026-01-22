@@ -64,8 +64,9 @@ class ChannelAttention(nn.Module):
     def __init__(self, channel, reduction=16):
         super().__init__()
         self.avgpool = nn.AdaptiveAvgPool2d(1)
+        self.maxpool = nn.AdaptiveMaxPool2d(1)
         self.se = nn.Sequential(
-            nn.Conv2d(channel, channel // reduction, 1, bias=True),
+            nn.Conv2d(channel * 2, channel // reduction, 1, bias=True),
             nn.ReLU(),
             nn.Conv2d(channel // reduction, channel, 1, bias=True),
         )
@@ -73,7 +74,9 @@ class ChannelAttention(nn.Module):
 
     def forward(self, x):
         avg_result = self.avgpool(x)
-        avg_out = self.se(avg_result)
+        max_result = self.maxpool(x)
+        pool_result = torch.cat([avg_result, max_result], dim=1)
+        avg_out = self.se(pool_result)
         output = self.sigmoid(avg_out)
         return output * x
 

@@ -34,3 +34,8 @@ https://github.com/landskape-ai/triplet-attention/blob/master/MODELS/triplet_att
 
 196 平均池化 189复现 120epoch
 output = self.sigmoid(avg_out)
+0.1897
+0.42092
+
+197 https://github.com/GuHY777/MFENet-VIReID/blob/main/model/mfenet_no2.py
+
