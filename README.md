@@ -56,9 +56,20 @@ self.conv1 = nn.Conv2d(2, 1, 7, padding=3, bias=False)
 200 197改进
 self.conv1 = nn.Conv1d(2, 1, 5, 1, 2)
 0.15653
-0.35459
+0.35459 
 
 201 196改进
 self.se = nn.Sequential(
             nn.Conv2d(channel * 2, channel, 1, 1, 0, bias=True),
         )
+0.18494
+0.3801
+
+202 197改进
+self.se = nn.Sequential(
+            nn.Conv2d(channel * 2, channel, 1, 1, 0, bias=True),
+        )
+0.18494
+0.3801
+
+203 197
