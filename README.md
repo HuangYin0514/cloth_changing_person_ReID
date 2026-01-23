@@ -73,3 +73,9 @@ self.se = nn.Sequential(
 0.3801
 
 203 197
+self.se = nn.Sequential(
+    nn.Conv2d(channel * 2, channel, 1, bias=True),
+    nn.BatchNorm2d(channel),
+    nn.ReLU(),
+    nn.Conv2d(channel, channel, 1, bias=True),
+)
