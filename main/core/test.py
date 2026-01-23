@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 import torch
-from reid import evaluate_ltcc
+from reid import evaluate_ltcc, evaluate_prcc_all_gallery
 from sklearn import metrics as sk_metrics
 from torch.nn import functional as F
 from tqdm import tqdm
@@ -73,23 +73,45 @@ def get_distmat(qf, gf, dist="cosine"):
 
 def test(config, reid_net, query_loader, gallery_loader, device, logger):
     reid_net.eval()
+    if config.DATA.TRAIN_DATASET == "ltcc":
 
-    with torch.no_grad():
-        qf, q_pids, q_camids, q_clothids = get_data(query_loader, reid_net, device)
-        gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
+        with torch.no_grad():
+            qf, q_pids, q_camids, q_clothids = get_data(query_loader, reid_net, device)
+            gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
 
-    distmat = get_distmat(qf, gf, dist="cosine")
-    # distmat = get_distmat(qf, gf, dist="euclidean")
+        distmat = get_distmat(qf, gf, dist="cosine")
+        # distmat = get_distmat(qf, gf, dist="euclidean")
 
-    if config.TEST.RE_RANK:
-        logger("Using re_ranking technology...")
-        distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
+        if config.TEST.RE_RANK:
+            logger("Using re_ranking technology...")
+            distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
 
-    # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(distmat, q_pids, q_camids, g_pids, g_camids)  # 标准测试/性能低于服装专用的评估器
-    # logger("SC mode, \t mAP: {:.4f}; \t Rank: {}.".format(mAP, CMC[0:20]))
+            # mAP, CMC = ReIDEvaluator(mode=config.TEST.TEST_MODE).evaluate(distmat, q_pids, q_camids, g_pids, g_camids)  # 标准测试/性能低于服装专用的评估器
+            # logger("SC mode, \t mAP: {:.4f}; \t Rank: {}.".format(mAP, CMC[0:20]))
 
-    CMC_SC, mAP_SC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=False)
-    logger("SC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_SC * 100, CMC_SC[0] * 100, CMC_SC[0:20]))
-    CMC_CC, mAP_CC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=True)
-    logger("CC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_CC * 100, CMC_CC[0] * 100, CMC_CC[0:20]))
-    return mAP_CC, CMC_CC[0:20]
+        CMC_SC, mAP_SC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=False)
+        logger("SC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_SC * 100, CMC_SC[0] * 100, CMC_SC[0:20]))
+        CMC_CC, mAP_CC = evaluate_ltcc(distmat, q_pids, g_pids, q_camids, g_camids, q_clothids, g_clothids, ltcc_cc_setting=True)
+        logger("CC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_CC * 100, CMC_CC[0] * 100, CMC_CC[0:20]))
+        return mAP_CC, CMC_CC[0:20]
+
+    if config.DATA.TRAIN_DATASET == "prcc":
+        query_sc_loader = query_loader[0]
+        with torch.no_grad():
+            qf, q_pids, q_camids, q_clothids = get_data(query_sc_loader, reid_net, device)
+            gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
+
+        distmat = get_distmat(qf, gf, dist="cosine")
+
+        CMC_SC, mAP_SC = evaluate_prcc_all_gallery(distmat, q_pids, g_pids)
+        logger("SC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_SC * 100, CMC_SC[0] * 100, CMC_SC[0:20]))
+
+        query_cc_loader = query_loader[1]
+        with torch.no_grad():
+            qf, q_pids, q_camids, q_clothids = get_data(query_cc_loader, reid_net, device)
+            gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
+
+        distmat = get_distmat(qf, gf, dist="cosine")
+        CMC_CC, mAP_CC = evaluate_prcc_all_gallery(distmat, q_pids, g_pids)
+        logger("CC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_CC * 100, CMC_CC[0] * 100, CMC_CC[0:20]))
+        return mAP_CC, CMC_CC[0:20]
