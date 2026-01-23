@@ -66,10 +66,12 @@ class ChannelAttention(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.maxpool = nn.AdaptiveMaxPool2d(1)
         self.se = nn.Sequential(
-            nn.Conv2d(channel * 2, channel, 1, bias=True),
-            nn.BatchNorm2d(channel),
-            nn.ReLU(),
-            nn.Conv2d(channel, channel, 1, bias=True),
+            # 先降维：channel*2 -> channel//reduction
+            nn.Conv2d(channel * 2, channel // reduction, 1, bias=False),
+            nn.BatchNorm2d(channel // reduction),
+            nn.ReLU(inplace=True),
+            # 再升维：channel//reduction -> channel
+            nn.Conv2d(channel // reduction, channel, 1, bias=False),
         )
         self.sigmoid = nn.Sigmoid()
 
