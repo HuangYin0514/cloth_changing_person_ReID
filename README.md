@@ -188,4 +188,4 @@ class ChannelAttention(nn.Module):
 
 
 210 distmat = get_distmat(qf, gf, dist="euclidean")
-
+euclidean cosine性能完全一致
