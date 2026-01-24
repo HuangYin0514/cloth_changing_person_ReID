@@ -146,6 +146,9 @@ class ChannelAttention(nn.Module):
         avg_out = self.se(pool_result)
         output = self.sigmoid(avg_out)
         return output * x
+0.14939
+0.41071
+
 
 203
 class ChannelAttention(nn.Module):
@@ -170,3 +173,10 @@ class ChannelAttention(nn.Module):
         avg_out = self.se(pool_result)
         output = self.sigmoid(avg_out)
         return output * x
+0.16194
+0.37755
+
+
+206 prcc数据集
+
+207 25ep 开启辅助训练
