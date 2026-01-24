@@ -185,7 +185,12 @@ class ChannelAttention(nn.Module):
 0.47954
 
 209 去除修正模块
-
+0.50412
+0.51454
 
 210 distmat = get_distmat(qf, gf, dist="euclidean")
 euclidean cosine性能完全一致
+
+211 Baseline r50ibn
+
+212 Baseline r50
