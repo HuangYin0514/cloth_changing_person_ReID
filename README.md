@@ -184,6 +184,8 @@ class ChannelAttention(nn.Module):
 0.50618
 0.47954
 
-209 考虑去除修正模块
+209 去除修正模块
 
+
+210 distmat = get_distmat(qf, gf, dist="euclidean")
 

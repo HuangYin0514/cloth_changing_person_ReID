@@ -101,7 +101,7 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         with torch.no_grad():
             qf, q_pids, q_camids, q_clothids = get_data(query_sc_loader, reid_net, device)
             gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
-        distmat = get_distmat(qf, gf, dist="cosine")
+        distmat = get_distmat(qf, gf, dist="euclidean")
         CMC_SC, mAP_SC = evaluate_prcc_all_gallery(distmat, q_pids, g_pids)
         logger("SC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_SC * 100, CMC_SC[0] * 100, CMC_SC[0:20]))
 
@@ -110,7 +110,7 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         with torch.no_grad():
             qf, q_pids, q_camids, q_clothids = get_data(query_cc_loader, reid_net, device)
             gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
-        distmat = get_distmat(qf, gf, dist="cosine")
+        distmat = get_distmat(qf, gf, dist="euclidean")
         CMC_CC, mAP_CC = evaluate_prcc_all_gallery(distmat, q_pids, g_pids)
         logger("CC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_CC * 100, CMC_CC[0] * 100, CMC_CC[0:20]))
         return mAP_CC, CMC_CC[0:20]
