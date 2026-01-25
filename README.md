@@ -217,3 +217,8 @@ euclidean cosine性能完全一致
 0.53203
 
 218 修复错误测试问题
+如果 mAP 涨得少（<2 个点）：把 lambda_value 降到 0.2（增强 rerank 修正力度），k1 升到 25；
+如果 rerank 后精度反而降了：把 k1 降到 15（减少噪声），lambda_value 升到 0.35。
+
+
+219 去掉了msi 并使用rerank
