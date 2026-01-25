@@ -101,7 +101,7 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         with torch.no_grad():
             qf, q_pids, q_camids, q_clothids = get_data(query_sc_loader, reid_net, device)
             gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
-        distmat = get_distmat(qf, gf, dist="euclidean")
+        distmat = get_distmat(qf, gf, dist="cosine")
         if not config.TEST.RE_RANK:
             distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
 
@@ -112,10 +112,10 @@ def test(config, reid_net, query_loader, gallery_loader, device, logger):
         query_cc_loader = query_loader[1]
         with torch.no_grad():
             qf, q_pids, q_camids, q_clothids = get_data(query_cc_loader, reid_net, device)
-            gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
-        distmat = get_distmat(qf, gf, dist="euclidean")
-        if not config.TEST.RE_RANK:
-            distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
+            # gf, g_pids, g_camids, g_clothids = get_data(gallery_loader, reid_net, device)
+        distmat = get_distmat(qf, gf, dist="cosine")
+        logger("Using re_ranking technology...")
+        distmat = re_ranking(torch.from_numpy(qf), torch.from_numpy(gf), k1=20, k2=6, lambda_value=0.3)
         CMC_CC, mAP_CC = evaluate_prcc_all_gallery(distmat, q_pids, g_pids)
         logger("CC mode, \t mAP: {:.4f}%; \t R-1: {:.4f}%. \t Rank: {}.".format(mAP_CC * 100, CMC_CC[0] * 100, CMC_CC[0:20]))
         return mAP_CC, CMC_CC[0:20]
