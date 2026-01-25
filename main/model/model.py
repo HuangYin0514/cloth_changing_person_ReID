@@ -24,8 +24,7 @@ class ReID_Net(nn.Module):
 
         # ------------- 全局信息 -----------------------
         self.GLOBAL_DIM = 2048
-        # self.global_pool = GeneralizedMeanPoolingP()
-        self.global_pool = nn.AdaptiveAvgPool2d(1)
+        self.global_pool = GeneralizedMeanPoolingP()
         self.global_bn_neck = BN_Neck(self.GLOBAL_DIM)
         self.global_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
@@ -53,7 +52,7 @@ class ReID_Net(nn.Module):
 
         # ------------- 全局信息 -----------------------
         backbone_feat_map = self.backbone(img)
-        # backbone_feat_map = self.msi(backbone_feat_map)
+        backbone_feat_map = self.msi(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
