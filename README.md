@@ -192,5 +192,11 @@ class ChannelAttention(nn.Module):
 euclidean cosine性能完全一致
 
 211 Baseline r50ibn
+0.53405
+0.51764
 
 212 Baseline r50
+0.56711
+0.55913
+
+213 Baseline r50
