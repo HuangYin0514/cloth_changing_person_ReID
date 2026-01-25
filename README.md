@@ -200,3 +200,5 @@ euclidean cosine性能完全一致
 0.55913
 
 213 Baseline r50
+
+214 考虑去除多尺度模块
