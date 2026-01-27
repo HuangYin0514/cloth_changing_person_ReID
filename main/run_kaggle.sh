@@ -9,8 +9,12 @@ wandb login c74133df8c2cf575304acf8a99fe03ab74b6fe6a
 # Lucky / ltcc  ===================================================================================================================
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky
 
+python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.2
+
+python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.3
+
 ############################################################
 # prcc
 ############################################################
-python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky DATA.TRAIN_DATASET=prcc DATA.TRAIN_ROOT=/kaggle/input/prcc-dataset/prcc/rgb/ MODEL.BACKBONE_TYPE=resnet50 
+# python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky DATA.TRAIN_DATASET=prcc DATA.TRAIN_ROOT=/kaggle/input/prcc-dataset/prcc/rgb/ MODEL.BACKBONE_TYPE=resnet50 
 # OPTIMIZER.TOTAL_TRAIN_EPOCH=60

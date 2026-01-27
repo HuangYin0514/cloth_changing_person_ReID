@@ -40,7 +40,7 @@ class ReID_Net(nn.Module):
         self.unclothe_classifier = Linear_Classifier(self.GLOBAL_DIM, num_pid)
 
         # ------------- 多尺度信息 -----------------------
-        # self.msi = OSBlock(in_channels=2048, out_channels=2048)
+        self.msi = OSBlock(in_channels=2048, out_channels=2048)
 
     def heatmap(self, img):
         B, C, H, W = img.shape
@@ -52,7 +52,7 @@ class ReID_Net(nn.Module):
 
         # ------------- 全局信息 -----------------------
         backbone_feat_map = self.backbone(img)
-        # backbone_feat_map = self.msi(backbone_feat_map)
+        backbone_feat_map = self.msi(backbone_feat_map)
         global_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)
         global_bn_feat = self.global_bn_neck(global_feat)
 
