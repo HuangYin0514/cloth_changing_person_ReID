@@ -9,7 +9,7 @@ wandb login c74133df8c2cf575304acf8a99fe03ab74b6fe6a
 # Lucky / ltcc  ===================================================================================================================
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky
 
-python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.003
+python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.002
 
 ############################################################
 # prcc
