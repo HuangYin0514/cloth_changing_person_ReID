@@ -15,8 +15,11 @@ wandb login c74133df8c2cf575304acf8a99fe03ab74b6fe6a
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.001
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.003
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.004
-python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.005
-python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.006
+# python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.005
+# python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.006
+python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.007
+python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.008
+
 ############################################################
 # prcc
 ############################################################
