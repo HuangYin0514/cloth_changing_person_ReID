@@ -23,8 +23,8 @@ wandb login c74133df8c2cf575304acf8a99fe03ab74b6fe6a
 
 # =================== 可视化  ==============================
 mkdir -p results/outputs/models
-gdown -O results/outputs/models/model_48.pth 1TEsdxgbhxxuQ5Jheej6kvNbjCfVp_i6Y 
-python vis_main.py --config_file "config/method.yml" TASK.NOTES=236-Vis_rank TEST.RESUME_EPOCH=89
+gdown -O results/outputs/models/model_89.pth 1TEsdxgbhxxuQ5Jheej6kvNbjCfVp_i6Y 
+python vis_main.py --config_file "config/method.yml" TASK.NOTES=237-Vis_rank TEST.RESUME_EPOCH=89
 tar -czf ../result_method.tar.gz results
 rm -rf results/outputs/*
 
