@@ -21,8 +21,15 @@ wandb login c74133df8c2cf575304acf8a99fe03ab74b6fe6a
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.009
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.010
 
+# =================== 可视化  ==============================
+mkdir -p results/outputs/models
+gdown -O results/outputs/models/model_48.pth 1TEsdxgbhxxuQ5Jheej6kvNbjCfVp_i6Y 
+python vis_main.py --config_file "config/method.yml" TASK.NOTES=235_Vis_rank MODEL.RESUME_EPOCH=89
+tar -czf ../result_method.tar.gz results
+rm -rf results/outputs/*
+
 # =================== 基线模型  ==============================
-python main.py --config_file "config/method.yml" TASK.NOTES=234-B MODEL.MODULE=Baseline
+# python main.py --config_file "config/method.yml" TASK.NOTES=234-B MODEL.MODULE=Baseline
 
 ############################################################
 # prcc
