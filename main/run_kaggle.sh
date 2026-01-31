@@ -6,11 +6,10 @@ wandb login c74133df8c2cf575304acf8a99fe03ab74b6fe6a
 ############################################################
 # ltcc
 ############################################################
-# Lucky / ltcc  ===================================================================================================================
-# python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky
+# =================== 完整模型  ==============================
+# python main.py --config_file "config/method.yml" TASK.NOTES=Debug MODEL.KD=0.002 
 
-python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.002 
-
+# =================== 参数分析  ==============================
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.000
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.001
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.003
@@ -22,6 +21,8 @@ python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Luck
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.009
 # python main.py --config_file "config/method.yml" TASK.NOTES=Debug TASK.NAME=Lucky MODEL.KD=0.010
 
+# =================== 基线模型  ==============================
+python main.py --config_file "config/method.yml" TASK.NOTES=234-B MODEL.MODULE=Baseline
 
 ############################################################
 # prcc
