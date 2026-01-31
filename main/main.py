@@ -88,8 +88,8 @@ def run(config):
                 best_rank1 = CMC[0]
                 best_mAP = mAP
                 wandb.log({"best_epoch": best_epoch, "best_rank1": best_rank1, "best_mAP": best_mAP})
-                # if epoch > 40:
-                #     util.save_model(model=reid_net, epoch=epoch, path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
+                if epoch > 40:
+                    util.save_model(model=reid_net, epoch=epoch, path_dir=os.path.join(config.SAVE.OUTPUT_PATH, "models/"))
 
     logger("=" * 50)
     logger("Best model is: epoch: {}, mAP: {:.4f}%, rank1: {:.4f}%.".format(best_epoch, best_mAP * 100, best_rank1 * 100))

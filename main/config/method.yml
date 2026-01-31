@@ -31,7 +31,7 @@ SCHEDULER:
 
 TEST:
   EVAL_EPOCH: 5
-  # RESUME_TEST_MODEL: 119  
+  # RESUME_TEST_MODEL: 89  
   # TEST_MODE: "inter-camera"  
   RE_RANK: False
 

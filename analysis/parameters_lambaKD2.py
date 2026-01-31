@@ -15,14 +15,15 @@ OUTPUT_DIR = "./analysis/results/ablation"
 
 def plot_parameter_lossWeight():
     # 设置数据 --------------------------------------------------------
-    x_values = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-    map_values = [64.339, 69.467, 69.78, 69.707, 71.221, 69.585, 70.863, 70.301, 70.968, 70.025, 70.946]
-    rank1_values = [67.499, 74.441, 74.915, 74.389, 77.044, 73.836, 76.15, 75.335, 75.914, 74.888, 76.203]
+    x_values = [0.000, 0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01]
+    map_values = [18.702, 18.539, 19.264, 18.317, 18.601, 18.122, 19.041, 19.054, 18.103, 17.818, 18.18]
+    rank1_values = [38.776, 38.01, 42.602, 40.561, 39.796, 40.816, 40.396, 40.051, 40.306, 40.051, 41.327]
 
     # 创建画布 --------------------------------------------------------
     LINE_NUM = 1
     ROW_NUM = 1
-    FIGSIZE = (4 * ROW_NUM, 3 * LINE_NUM)
+    # FIGSIZE = (4 * ROW_NUM, 3 * LINE_NUM)
+    FIGSIZE = (6 * ROW_NUM, 3 * LINE_NUM)
     fig, axis = plt.subplots(LINE_NUM, ROW_NUM, figsize=FIGSIZE, dpi=LATAX_DPI)
     axis_1 = axis
 
@@ -33,9 +34,9 @@ def plot_parameter_lossWeight():
 
     # 绘制左侧轴
     # axis_1.set_ylim(min_values + offset, max_values + offset)
-    axis_1.set_ylim(60, 80)
+    axis_1.set_ylim(35, 45)
     axis_1.set_ylabel("Rank-1 (%)")
-    axis_1.yaxis.set_major_locator(MultipleLocator(3))
+    axis_1.yaxis.set_major_locator(MultipleLocator(2))
 
     # 绘制横轴
     # axis_1.set_xlabel(r"Parameter $\lambda$")
