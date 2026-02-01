@@ -1,5 +1,5 @@
 TASK:
-  NAME: "Method_Name"
+  NAME: "Lucky" # Lucky / Method_Name
   NOTES: "KaggleVersion_Notes"
   PROJECT: "CC_ReID"
   TAGS: ["dev", "train"]  
