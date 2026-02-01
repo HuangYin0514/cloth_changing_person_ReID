@@ -247,7 +247,7 @@ class Rank_Core:
 
             if (q_idx + 1) % 100 == 0:
                 print("- done {}/{}".format(q_idx + 1, num_q))
-                break
+                # break # 只可视化前100张图片
 
     def __call__(self, distmat, dataset):
         # model.eval()
