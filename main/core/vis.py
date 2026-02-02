@@ -216,9 +216,10 @@ class Rank_Core:
                     matched = g_pid == q_pid
                     # if matched and rank_idx == 1:  # 过滤, rank-1 错误的情况
                     #     continue
-                    if not matched:
+
+                    # if not matched: # ********** 寻找下一个正确匹配的行人 **********
                         # print("q_pid: {}, g_pid: {}".format(q_pid, g_pid))
-                        continue
+                        # continue
 
                     if matched:
                         matched_num += 1
