@@ -191,7 +191,7 @@ class Rank_Core:
         print("Visualizing top-{} ranks ...".format(topk))
 
         query, gallery = dataset
-        indices = np.argsort(distmat)[:, ::-1]
+        indices = np.argsort(distmat, axis=1)
 
         for q_idx in range(num_q):
             q_feat, q_pid, q_camid, q_cloid = query[q_idx]
@@ -218,8 +218,8 @@ class Rank_Core:
                     #     continue
 
                     # if not matched: # ********** 寻找下一个正确匹配的行人 **********
-                        # print("q_pid: {}, g_pid: {}".format(q_pid, g_pid))
-                        # continue
+                    # print("q_pid: {}, g_pid: {}".format(q_pid, g_pid))
+                    # continue
 
                     if matched:
                         matched_num += 1

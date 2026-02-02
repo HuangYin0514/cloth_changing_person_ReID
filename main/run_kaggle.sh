@@ -32,7 +32,7 @@ wandb login c74133df8c2cf575304acf8a99fe03ab74b6fe6a
 # 基线可视化
 mkdir -p results/outputs/models
 gdown -O results/outputs/models/model_99.pth 1pvQzkwUeK06jnik1hFG9yryTHeOwZKeu
-python vis_main.py --config_file "config/method.yml" TASK.NOTES=240-Vis_rank TEST.RESUME_EPOCH=99
+python vis_main.py --config_file "config/method.yml" TASK.NOTES=241-Vis_rank TEST.RESUME_EPOCH=99
 tar -czf ../result_method.tar.gz results
 rm -rf results/outputs/*
 
