@@ -213,8 +213,9 @@ class Rank_Core:
                 # gcamid = 1
                 invalid = (q_pid == g_pid) & (q_camid == g_camid)
                 if not invalid:
-                    # matched = g_pid == q_pid  # 常规模式
-                    matched = (g_pid == q_pid) & (q_cloid != g_cloid)  # 换衣模式
+                    matched = g_pid == q_pid  # 常规模式
+                    if q_cloid == g_cloid:
+                        continue  # 换衣模式
 
                     # if matched and rank_idx == 1:  # 过滤, rank-1 错误的情况
                     #     continue
