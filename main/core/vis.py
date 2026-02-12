@@ -195,7 +195,7 @@ class Rank_Core:
 
         for q_idx in range(num_q):
             q_feat, q_pid, q_camid, q_cloid = query[q_idx]
-            qcamid = 0
+            # qcamid = 0
 
             if data_type == "image":
                 qimg = tensor_2_image(q_feat, self.IMAGENET_MEAN, self.IMAGENET_STD)
@@ -210,9 +210,9 @@ class Rank_Core:
             matched_num = 0
             for g_idx in indices[q_idx, :]:
                 g_feat, g_pid, g_camid, g_cloid = gallery[g_idx]
-                gcamid = 1
-                # invalid = (q_pid == g_pid) & (qcamid == gcamid)  # 常规模式
-                invalid = (q_pid == g_pid) & (qcamid == gcamid) & (q_cloid == g_cloid)  # 换衣模式
+                # gcamid = 1
+                invalid = (q_pid == g_pid) & (q_camid == g_camid)  # 常规模式
+                # invalid = (q_pid == g_pid) & (q_camid == g_camid) & (q_cloid == g_cloid)  # 换衣模式
                 if not invalid:
                     matched = g_pid == q_pid
                     # if matched and rank_idx == 1:  # 过滤, rank-1 错误的情况
