@@ -163,8 +163,8 @@ class Rank_Core:
         self.config = config
 
         self.GRID_SPACING = 10
-        self.QUERY_EXTRA_SPACING = 90
-        self.BW = 5  # border width
+        self.QUERY_EXTRA_SPACING = 20
+        self.BW = 2  # border width
         self.GREEN = (0, 255, 0)
         self.RED = (0, 0, 255)
 

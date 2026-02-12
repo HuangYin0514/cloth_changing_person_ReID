@@ -23,7 +23,7 @@ def plot_parameter_lossWeight():
     LINE_NUM = 1
     ROW_NUM = 1
     # FIGSIZE = (4 * ROW_NUM, 3 * LINE_NUM)
-    FIGSIZE = (6 * ROW_NUM, 3 * LINE_NUM)
+    FIGSIZE = (4 * ROW_NUM, 3 * LINE_NUM)
     fig, axis = plt.subplots(LINE_NUM, ROW_NUM, figsize=FIGSIZE, dpi=LATAX_DPI)
     axis_1 = axis
 
