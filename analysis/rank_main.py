@@ -102,7 +102,7 @@ def merge_images_vertically(folder1, folder2, output_folder):
 # 请修改以下三个路径为你实际的文件夹路径
 FOLDER1_PATH = "/Users/drhy/Desktop/temp/result_baseline/outputs/rank/"  # 第一个图片文件夹
 FOLDER2_PATH = "/Users/drhy/Desktop/temp/result_method/outputs/rank/"  # 第二个图片文件夹
-OUTPUT_FOLDER = "./merged_photos"  # 输出文件夹（当前目录下）
+OUTPUT_FOLDER = "/Users/drhy/Desktop/temp/rank_sc/"  # 输出文件夹（当前目录下）
 # -------------------------------------------------------------
 
 # 执行图片拼接

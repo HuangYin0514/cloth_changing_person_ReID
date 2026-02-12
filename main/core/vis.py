@@ -211,7 +211,8 @@ class Rank_Core:
             for g_idx in indices[q_idx, :]:
                 g_feat, g_pid, g_camid, g_cloid = gallery[g_idx]
                 gcamid = 1
-                invalid = (q_pid == g_pid) & (qcamid == gcamid)
+                # invalid = (q_pid == g_pid) & (qcamid == gcamid)  # 常规模式
+                invalid = (q_pid == g_pid) & (qcamid == gcamid) & (q_cloid == g_cloid)  # 换衣模式
                 if not invalid:
                     matched = g_pid == q_pid
                     # if matched and rank_idx == 1:  # 过滤, rank-1 错误的情况
