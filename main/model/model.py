@@ -45,6 +45,7 @@ class ReID_Net(nn.Module):
     def heatmap(self, img):
         B, C, H, W = img.shape
         backbone_feat_map = self.backbone(img)
+        backbone_feat_map = self.msi(backbone_feat_map)
         return backbone_feat_map
 
     def forward(self, img):

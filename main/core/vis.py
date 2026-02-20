@@ -105,12 +105,15 @@ class Heatmap_Core:
         bs, c, h, w = features_map.shape
 
         # Channel
-        # heatmaps = self.channel_fn(features_map)
+        heatmaps = self.channel_fn(features_map)
         # CAM
-        heatmaps = self.cam_fn(features_map, classifier, pid)
+        # heatmaps = self.cam_fn(features_map, classifier, pid)
 
         mean_vals = heatmaps.mean(dim=(1, 2), keepdim=True)  # 异常点处理
         heatmaps[:, :3, :3] = mean_vals
+        heatmaps[:, :3, 3:] = mean_vals
+        heatmaps[:, 3:, :3] = mean_vals
+        heatmaps[:, 3:, 3:] = mean_vals
 
         heatmaps = heatmaps.view(bs, h * w)
         heatmaps = F.normalize(heatmaps, p=2, dim=1)
