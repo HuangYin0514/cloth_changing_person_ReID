@@ -30,11 +30,11 @@ tar -czf ../result_method.tar.gz results
 rm -rf results/outputs/*
 
 # 基线可视化
-mkdir -p results/outputs/models
-gdown -O results/outputs/models/model_99.pth 1pvQzkwUeK06jnik1hFG9yryTHeOwZKeu
-python vis_main.py --config_file "config/method.yml" TASK.NOTES=245-Vis_rank TEST.RESUME_EPOCH=99
-tar -czf ../result_baseline.tar.gz results
-rm -rf results/outputs/*
+# mkdir -p results/outputs/models
+# gdown -O results/outputs/models/model_99.pth 1pvQzkwUeK06jnik1hFG9yryTHeOwZKeu
+# python vis_main.py --config_file "config/method.yml" TASK.NOTES=245-Vis_rank TEST.RESUME_EPOCH=99
+# tar -czf ../result_baseline.tar.gz results
+# rm -rf results/outputs/*
 
 # =================== 基线模型  ==============================
 # python main.py --config_file "config/method.yml" TASK.NOTES=234-B MODEL.MODULE=Baseline
