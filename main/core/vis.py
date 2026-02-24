@@ -14,7 +14,7 @@ from .test import cosine_dist, euclidean_dist, get_data, get_distmat, test
 
 
 def visualization(config, reid_net, train_loader, query_loader, gallery_loader, logger, device):
-    visualization_heatmap(config, reid_net, train_loader, device)  # Grad-CAM对训练集可视化 / 可选可见光图像/红外图像
+    visualization_heatmap(config, reid_net, query_loader, device)  # Grad-CAM对训练集可视化 / 可选可见光图像/红外图像
     # visualization_rank(config, reid_net, train_loader, query_loader, gallery_loader, logger, device)
     # visualization_tsne(config, base, loader)
 
@@ -110,7 +110,7 @@ class Heatmap_Core:
         # heatmaps = self.cam_fn(features_map, classifier, pid)
 
         mean_vals = heatmaps.mean(dim=(1, 2), keepdim=True)  # 异常点处理
-        # heatmaps[:, :3, :3] = mean_vals
+        heatmaps[:, :3, :3] = mean_vals
         heatmaps[:, :3, 3:] = mean_vals
         # heatmaps[:, 3:, :3] = mean_vals
         # heatmaps[:, 3:, 3:] = mean_vals
