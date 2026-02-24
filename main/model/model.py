@@ -51,7 +51,7 @@ class ReID_Net(nn.Module):
         gmp_feat = self.global_pool(backbone_feat_map).view(B, self.GLOBAL_DIM)  # (B, C)
         # 权重归一化
         weights = F.softmax(gmp_feat, dim=1)  # (B, C)
-        weights = weights.view(B, C, 1, 1)
+        weights = weights.view(B, -1, 1, 1)
         # 加权求和：(B, C, H, W) * (B, C, 1, 1) -> (B, C, H, W) -> (B, 1, H, W)
         weighted_feat = (backbone_feat_map * weights).sum(dim=1, keepdim=True)
         weighted_feat = (weighted_feat - weighted_feat.min()) / (weighted_feat.max() - weighted_feat.min() + 1e-8)
