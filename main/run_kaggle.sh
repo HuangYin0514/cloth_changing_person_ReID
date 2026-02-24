@@ -30,6 +30,7 @@ gdown -O results/outputs/models/model_89.pth 1TEsdxgbhxxuQ5Jheej6kvNbjCfVp_i6Y
 python vis_main.py --config_file "config/method.yml" TASK.NOTES=${VERSION_NAME} TEST.RESUME_EPOCH=89
 # tar -czf ../result_method.tar.gz results
 # rm -rf results/outputs/*
+echo -e "\n✅ $VERSION_NAME 成功：已运行完成！"
 
 # 基线可视化
 # mkdir -p results/outputs/models
