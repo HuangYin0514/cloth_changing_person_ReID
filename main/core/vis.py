@@ -113,7 +113,7 @@ class Heatmap_Core:
         # heatmaps[:, :3, :3] = mean_vals
         # heatmaps[:, :3, 3:] = mean_vals
         # heatmaps[:, 3:, :3] = mean_vals
-        # heatmaps[:, 3:, 3:] = mean_vals
+        heatmaps[:, 3:, 3:] = mean_vals
 
         heatmaps = heatmaps.view(bs, h * w)
         heatmaps = F.normalize(heatmaps, p=2, dim=1)
