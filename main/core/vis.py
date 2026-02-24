@@ -110,8 +110,8 @@ class Heatmap_Core:
         # heatmaps = self.cam_fn(features_map, classifier, pid)
 
         mean_vals = heatmaps.mean(dim=(1, 2), keepdim=True)  # 异常点处理
-        heatmaps[:, :4, :2] = mean_vals
-        heatmaps[:, :5, 2:] = mean_vals
+        heatmaps[:, :4, :2] = mean_vals * 0
+        heatmaps[:, :5, 2:] = mean_vals * 0
         # heatmaps[:, 3:, :3] = mean_vals
         # heatmaps[:, 3:, 3:] = mean_vals
 
