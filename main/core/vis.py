@@ -111,7 +111,7 @@ class Heatmap_Core:
 
         mean_vals = heatmaps.mean(dim=(1, 2), keepdim=True)  # 异常点处理
         heatmaps[:, :2, :2] = mean_vals
-        heatmaps[:, :2, 2:] = mean_vals
+        heatmaps[:, :5, 2:] = mean_vals
         # heatmaps[:, 3:, :3] = mean_vals
         # heatmaps[:, 3:, 3:] = mean_vals
 
