@@ -43,9 +43,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             print(img_i.shape)
 
             # 生成热力图
-            cam_map_i = cam(img_i.unsqueeze(0))
-
-            # cam_map_i = cam_map[i]
+            cam_map_i = cam(img_i.view(1, C, H, W))  # [C, H, W]
 
             # 原始图像格式转换
             img_i = transforms.ToPILImage()(img_i)
