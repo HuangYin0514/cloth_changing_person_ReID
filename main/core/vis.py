@@ -56,19 +56,19 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             img_i = np.array(img_i) / 255.0
 
             # 热力图转彩色
-            cam_map_i = cv2.applyColorMap(cam_map_i, cv2.COLORMAP_JET)
+            cam_map_i = plt.cm.jet(cam_map_i)[:, :, :3]
 
             # 原始图像和热力图相互叠加
             ALPHA = 0.5  # 叠加参数
-            mixed_img = (1 - ALPHA) * img_i + ALPHA * cam_map_i
-            mixed_img = np.clip(mixed_img * 255, 0, 255).astype(np.uint8)
+            mixed_img_i = (1 - ALPHA) * img_i + ALPHA * cam_map_i
+            mixed_img_i = np.clip(mixed_img_i * 255, 0, 255).astype(np.uint8)
 
             # 生成网格图像
             GRID_SPACING = 10
             grid_img = 255 * np.ones((H, 3 * W + 2 * GRID_SPACING, 3), dtype=np.uint8)
             grid_img[:, :W, :] = img_i
             grid_img[:, W + GRID_SPACING : 2 * W + GRID_SPACING, :] = cam_map_i
-            grid_img[:, 2 * W + 2 * GRID_SPACING :, :] = mixed_img
+            grid_img[:, 2 * W + 2 * GRID_SPACING :, :] = mixed_img_i
 
             # 保存图像
             actmap_dir = os.path.join(config.SAVE.OUTPUT_PATH, "actmap/")
