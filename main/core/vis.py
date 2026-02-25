@@ -43,7 +43,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             print(img_i.shape)
 
             # 生成热力图
-            cam_map_i = cam(img_i.unsqueeze(0)).squeeze(0)
+            cam_map_i = cam(img_i.unsqueeze(0))
 
             # cam_map_i = cam_map[i]
 
