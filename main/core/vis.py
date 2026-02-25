@@ -30,7 +30,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         img, pid, camid, clotheid = img.to(device), pid.to(device), camid.to(device), clotheid.to(device)
 
         B, C, H, W = img.shape
-        print(img.shape)
+        # print(img.shape)
 
         #  初始化CAM
         # target_layer = reid_net.backbone.layer4[-1]  # ResNet50最后一个卷积层
@@ -41,19 +41,17 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
 
         for i in range(B):
             img_i = img[i]
-            print(img_i.shape)
 
             # 生成热力图
             cam_map_i = cam(img_i.view(1, C, H, W))  # [H, W]
-            print(cam_map_i.shape)
 
             # 原始图像归一化
-            MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1).to(device)
-            STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1).to(device)
-            img_i = img_i.view(C, H, W)
-            img_i = img_i * STD + MEAN
-            img_i = transforms.ToPILImage()(img_i)
-            img_i = np.array(img_i) / 255.0
+            IMAGENET_MEAN = [0.485, 0.456, 0.406]
+            IMAGENET_STD = [0.229, 0.224, 0.225]
+            for t, m, s in zip(img_i, IMAGENET_MEAN, IMAGENET_STD):
+                t.mul_(s).add_(m).clamp_(0, 1)
+            img_i = np.uint8(np.floor(img_i.cpu().detach().numpy() * 255))
+            img_i = img_i.transpose((1, 2, 0))  # (c, h, w) -> (h, w, c)
 
             # 热力图转彩色
             cam_map_i = plt.cm.jet(cam_map_i)[:, :, :3]
@@ -66,7 +64,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             # 生成网格图像
             GRID_SPACING = 10
             grid_img = 255 * np.ones((H, 3 * W + 2 * GRID_SPACING, 3), dtype=np.uint8)
-            grid_img[:, :W, :] = img_i
+            grid_img[:, :W, :] = img_i[:, :, ::-1]
             grid_img[:, W + GRID_SPACING : 2 * W + GRID_SPACING, :] = cam_map_i
             grid_img[:, 2 * W + 2 * GRID_SPACING :, :] = mixed_img_i
 
