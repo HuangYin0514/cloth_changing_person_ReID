@@ -7,3 +7,4 @@ from .os_walk import os_walk
 from .re_rank import re_ranking
 from .set_seed_torch import set_seed_torch
 from .time_now import time_now
+from .torchcam import GradCAM, GradCAMpp

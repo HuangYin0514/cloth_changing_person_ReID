@@ -3,12 +3,12 @@ import random
 import shutil
 
 import cv2
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import util
 from reid import evaluate_ltcc
-from torch.nn import functional as F
-from util import time_now
+from torchvision import transforms
+from util import GradCAMpp, time_now
 
 from .test import cosine_dist, euclidean_dist, get_data, get_distmat, test
 
@@ -19,20 +19,80 @@ def visualization(config, reid_net, train_loader, query_loader, gallery_loader, 
     # visualization_tsne(config, base, loader)
 
 
-def visualization_heatmap(config, reid_net, train_loader, device, *args, **kwargs):
-    print(time_now(), "CAM start")
-    reid_net.eval()
-    heatmap_loader = train_loader
-    heatmap_core = Heatmap_Core(config)
-    with torch.no_grad():
-        for index, data in enumerate(heatmap_loader):
-            if index % 100 == 0:
-                print(time_now(), "CAM: {}/{}".format(index, len(heatmap_loader)))
-            img, pid, camid, clotheid = data
-            img, pid, camid, clotheid = img.to(device), pid.to(device), camid.to(device), clotheid.to(device)
-            heatmap_core.__call__(reid_net, reid_net.global_classifier, img, pid, camid, clotheid, *args, **kwargs)
-            # break
-    print(time_now(), "CAM done.")
+def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwargs):
+    for index, data in enumerate(heatmap_loader):
+        # 打印进度
+        if index % 100 == 0:
+            print(time_now(), "CAM: {}/{}".format(index, len(heatmap_loader)))
+
+        # 获取数据
+        img, pid, camid, clotheid = data
+        img, pid, camid, clotheid = img.to(device), pid.to(device), camid.to(device), clotheid.to(device)
+
+        B, C, H, W = img.shape
+
+        #  初始化CAM
+        # target_layer = reid_net.layer4[-1]  # ResNet50最后一个卷积层
+        target_layer = reid_net.msi[-1]
+        cam = GradCAMpp(reid_net, target_layer)
+
+        # 生成热力图
+        cam_map = cam(img)
+
+        for i in range(B):
+            cam_map_i = cam_map[i]
+            img_i = img[i]
+
+            # 原始图像格式转换
+            img_i = transforms.ToPILImage()(img_i)
+            img_i = np.array(img_i) / 255.0
+
+            # 热力图归一化
+            MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
+            STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+            cam_map_i = cam_map_i * STD + MEAN
+
+            # 热力图转彩色
+            cam_map_i = cv2.applyColorMap(cam_map_i, cv2.COLORMAP_JET)
+
+            # 原始图像和热力图相互叠加
+            ALPHA = 0.5  # 叠加参数
+            mixed_img = (1 - ALPHA) * img_i + ALPHA * cam_map_i
+            mixed_img = np.clip(mixed_img * 255, 0, 255).astype(np.uint8)
+
+            # 生成网格图像
+            GRID_SPACING = 10
+            grid_img = 255 * np.ones((H, 3 * W + 2 * GRID_SPACING, 3), dtype=np.uint8)
+            grid_img[:, :W, :] = img_i
+            grid_img[:, W + GRID_SPACING : 2 * W + GRID_SPACING, :] = cam_map_i
+            grid_img[:, 2 * W + 2 * GRID_SPACING :, :] = mixed_img
+
+            # 保存图像
+            actmap_dir = os.path.join(config.SAVE.OUTPUT_PATH, "actmap/")
+            if not os.path.exists(actmap_dir):
+                os.makedirs(actmap_dir)
+                print("Successfully make dirs: {}".format(dir))
+            else:
+                shutil.rmtree(actmap_dir)
+                os.makedirs(actmap_dir)
+            random_number = random.randint(100000, 999999)
+            cv2.imwrite(os.path.join(actmap_dir, str(pid[i].item()) + "_" + str(camid[i].item()) + "_" + str(random_number) + ".jpg"), grid_img)
+
+
+# def visualization_heatmap(config, reid_net, train_loader, device, *args, **kwargs):
+#     print(time_now(), "CAM start")
+#     reid_net.eval()
+#     heatmap_loader = train_loader
+#     heatmap_core = Heatmap_Core(config)
+#     with torch.no_grad():
+#         for index, data in enumerate(heatmap_loader):
+#             if index % 100 == 0:
+#                 print(time_now(), "CAM: {}/{}".format(index, len(heatmap_loader)))
+#             img, pid, camid, clotheid = data
+#             img, pid, camid, clotheid = img.to(device), pid.to(device), camid.to(device), clotheid.to(device)
+#             heatmap_core.__call__(reid_net, reid_net.global_classifier, img, pid, camid, clotheid, *args, **kwargs)
+#             # break
+#     print(time_now(), "CAM done.")
 
 
 def visualization_rank(config, reid_net, train_loader, query_loader, gallery_loader, logger, device, *args, **kwargs):
@@ -61,104 +121,104 @@ def visualization_rank(config, reid_net, train_loader, query_loader, gallery_loa
 ##########################################################
 # Core
 ##########################################################
-class Heatmap_Core:
-    def __init__(self, config):
-        super(Heatmap_Core, self).__init__()
-        self.config = config
+# class Heatmap_Core:
+#     def __init__(self, config):
+#         super(Heatmap_Core, self).__init__()
+#         self.config = config
 
-        self.IMAGENET_MEAN = [0.485, 0.456, 0.406]
-        self.IMAGENET_STD = [0.229, 0.224, 0.225]
-        self.GRID_SPACING = 10
+#         self.IMAGENET_MEAN = [0.485, 0.456, 0.406]
+#         self.IMAGENET_STD = [0.229, 0.224, 0.225]
+#         self.GRID_SPACING = 10
 
-        self.actmap_dir = os.path.join(config.SAVE.OUTPUT_PATH, "actmap/")
-        if not os.path.exists(self.actmap_dir):
-            os.makedirs(self.actmap_dir)
-            print("Successfully make dirs: {}".format(dir))
-        else:
-            shutil.rmtree(self.actmap_dir)
-            os.makedirs(self.actmap_dir)
+#         self.actmap_dir = os.path.join(config.SAVE.OUTPUT_PATH, "actmap/")
+#         if not os.path.exists(self.actmap_dir):
+#             os.makedirs(self.actmap_dir)
+#             print("Successfully make dirs: {}".format(dir))
+#         else:
+#             shutil.rmtree(self.actmap_dir)
+#             os.makedirs(self.actmap_dir)
 
-    def channel_fn(self, features_map):
-        heatmaps = torch.abs(features_map)
-        # max_channel_indices = torch.argmax(heatmaps, dim=1, keepdim=True)[0]
-        # print(max_channel_indices, max_channel_indices.shape)
-        # heatmaps = torch.max(heatmaps[:, 476 : 476 + 1, :, :], dim=1, keepdim=True)[0]
-        heatmaps = torch.max(heatmaps, dim=1, keepdim=True)[0]
-        heatmaps = heatmaps.squeeze()
-        return heatmaps
+#     def channel_fn(self, features_map):
+#         heatmaps = torch.abs(features_map)
+#         # max_channel_indices = torch.argmax(heatmaps, dim=1, keepdim=True)[0]
+#         # print(max_channel_indices, max_channel_indices.shape)
+#         # heatmaps = torch.max(heatmaps[:, 476 : 476 + 1, :, :], dim=1, keepdim=True)[0]
+#         heatmaps = torch.max(heatmaps, dim=1, keepdim=True)[0]
+#         heatmaps = heatmaps.squeeze()
+#         return heatmaps
 
-    def cam_fn(self, features_map, classifier, pids):
-        bs, c, h, w = features_map.shape
-        classifier_params = [param for name, param in classifier.named_parameters()]
-        heatmaps = torch.zeros((bs, h, w))
-        for i in range(bs):
-            heatmap_i = torch.matmul(classifier_params[-1][pids[i]].unsqueeze(0), features_map[i].unsqueeze(0).reshape(c, h * w)).detach()
-            if heatmap_i.max() != 0:
-                heatmap_i = (heatmap_i - heatmap_i.min()) / (heatmap_i.max() - heatmap_i.min())
-            heatmap_i = heatmap_i.reshape(h, w)
-            heatmaps[i] = heatmap_i
-        return heatmaps
+#     def cam_fn(self, features_map, classifier, pids):
+#         bs, c, h, w = features_map.shape
+#         classifier_params = [param for name, param in classifier.named_parameters()]
+#         heatmaps = torch.zeros((bs, h, w))
+#         for i in range(bs):
+#             heatmap_i = torch.matmul(classifier_params[-1][pids[i]].unsqueeze(0), features_map[i].unsqueeze(0).reshape(c, h * w)).detach()
+#             if heatmap_i.max() != 0:
+#                 heatmap_i = (heatmap_i - heatmap_i.min()) / (heatmap_i.max() - heatmap_i.min())
+#             heatmap_i = heatmap_i.reshape(h, w)
+#             heatmaps[i] = heatmap_i
+#         return heatmaps
 
-    def actmap_fn(self, reid_net, classifier, img, pid, camid, clotheid, *args, **kwargs):
-        _, _, height, width = img.shape
-        features_map = reid_net.heatmap(img)
-        bs, c, h, w = features_map.shape
+#     def actmap_fn(self, reid_net, classifier, img, pid, camid, clotheid, *args, **kwargs):
+#         _, _, height, width = img.shape
+#         features_map = reid_net.heatmap(img)
+#         bs, c, h, w = features_map.shape
 
-        # Channel
-        heatmaps = self.channel_fn(features_map)
-        # CAM
-        # heatmaps = self.cam_fn(features_map, classifier, pid)
+#         # Channel
+#         heatmaps = self.channel_fn(features_map)
+#         # CAM
+#         # heatmaps = self.cam_fn(features_map, classifier, pid)
 
-        mean_vals = heatmaps.mean(dim=(1, 2), keepdim=True)  # 异常点处理
-        heatmaps[:, :4, :2] = mean_vals * 0
-        heatmaps[:, :5, 2:] = mean_vals * 0
-        # heatmaps[:, 3:, :3] = mean_vals
-        # heatmaps[:, 3:, 3:] = mean_vals
+#         mean_vals = heatmaps.mean(dim=(1, 2), keepdim=True)  # 异常点处理
+#         heatmaps[:, :4, :2] = mean_vals * 0
+#         heatmaps[:, :5, 2:] = mean_vals * 0
+#         # heatmaps[:, 3:, :3] = mean_vals
+#         # heatmaps[:, 3:, 3:] = mean_vals
 
-        heatmaps = heatmaps.view(bs, h * w)
-        heatmaps = F.normalize(heatmaps, p=2, dim=1)
-        heatmaps = heatmaps.view(bs, h, w)
+#         heatmaps = heatmaps.view(bs, h * w)
+#         heatmaps = F.normalize(heatmaps, p=2, dim=1)
+#         heatmaps = heatmaps.view(bs, h, w)
 
-        for j in range(bs):
+#         for j in range(bs):
 
-            # Image
-            img_i = img[j, ...]
-            for t, m, s in zip(img_i, self.IMAGENET_MEAN, self.IMAGENET_STD):
-                t.mul_(s).add_(m).clamp_(0, 1)
-            img_np = np.uint8(np.floor(img_i.cpu().detach().numpy() * 255))
-            img_np = img_np.transpose((1, 2, 0))  # (c, h, w) -> (h, w, c)
+#             # Image
+#             img_i = img[j, ...]
+#             for t, m, s in zip(img_i, self.IMAGENET_MEAN, self.IMAGENET_STD):
+#                 t.mul_(s).add_(m).clamp_(0, 1)
+#             img_np = np.uint8(np.floor(img_i.cpu().detach().numpy() * 255))
+#             img_np = img_np.transpose((1, 2, 0))  # (c, h, w) -> (h, w, c)
 
-            # Activation map
-            am = heatmaps[j, ...].cpu().detach().numpy()
-            # am = outputs[j, 2:-2:, 2:-2].numpy()
-            am = cv2.resize(am, (width, height))
-            am = 255 * (am - np.min(am)) / (np.max(am) - np.min(am) + 1e-12)
-            am = np.uint8(np.floor(am))
-            am = cv2.applyColorMap(am, cv2.COLORMAP_JET)
+#             # Activation map
+#             am = heatmaps[j, ...].cpu().detach().numpy()
+#             # am = outputs[j, 2:-2:, 2:-2].numpy()
+#             am = cv2.resize(am, (width, height))
+#             am = 255 * (am - np.min(am)) / (np.max(am) - np.min(am) + 1e-12)
+#             am = np.uint8(np.floor(am))
+#             am = cv2.applyColorMap(am, cv2.COLORMAP_JET)
 
-            # 重叠图像
-            overlapped = img_np * 0.5 + am * 0.5
-            overlapped[overlapped > 255] = 255
-            overlapped = overlapped.astype(np.uint8)
+#             # 重叠图像
+#             overlapped = img_np * 0.5 + am * 0.5
+#             overlapped[overlapped > 255] = 255
+#             overlapped = overlapped.astype(np.uint8)
 
-            # from left to right: original image, activation map, overlapped image
-            grid_img = 255 * np.ones((height, 3 * width + 2 * self.GRID_SPACING, 3), dtype=np.uint8)
-            grid_img[:, :width, :] = img_np[:, :, ::-1]
-            grid_img[:, width + self.GRID_SPACING : 2 * width + self.GRID_SPACING, :] = am
-            grid_img[:, 2 * width + 2 * self.GRID_SPACING :, :] = overlapped
+#             # from left to right: original image, activation map, overlapped image
+#             grid_img = 255 * np.ones((height, 3 * width + 2 * self.GRID_SPACING, 3), dtype=np.uint8)
+#             grid_img[:, :width, :] = img_np[:, :, ::-1]
+#             grid_img[:, width + self.GRID_SPACING : 2 * width + self.GRID_SPACING, :] = am
+#             grid_img[:, 2 * width + 2 * self.GRID_SPACING :, :] = overlapped
 
-            random_number = random.randint(100000, 999999)
-            cv2.imwrite(
-                os.path.join(self.actmap_dir, str(pid[j].item()) + "_" + str(camid[j].item()) + "_" + str(clotheid[j].item()) + "_" + "_" + str(random_number) + ".jpg"),
-                grid_img,
-            )
+#             random_number = random.randint(100000, 999999)
+#             cv2.imwrite(
+#                 os.path.join(self.actmap_dir, str(pid[j].item()) + "_" + str(camid[j].item()) + "_" + str(clotheid[j].item()) + "_" + "_" + str(random_number) + ".jpg"),
+#                 grid_img,
+#             )
 
-    def __call__(self, *args, **kwargs):
-        # model.eval()
-        # classifier.eval()
-        self.actmap_fn(*args, **kwargs)
-        # model.train()
-        # classifier.train()
+#     def __call__(self, *args, **kwargs):
+#         # model.eval()
+#         # classifier.eval()
+#         self.actmap_fn(*args, **kwargs)
+#         # model.train()
+#         # classifier.train()
 
 
 class Rank_Core:
