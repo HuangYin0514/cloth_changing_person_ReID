@@ -33,8 +33,8 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         print(img.shape)
 
         #  初始化CAM
-        target_layer = reid_net.backbone.layer4[-1]  # ResNet50最后一个卷积层
-        # target_layer = reid_net.msi
+        # target_layer = reid_net.backbone.layer4[-1]  # ResNet50最后一个卷积层
+        target_layer = reid_net.msi
         cam = GradCAMpp(reid_net, target_layer)
 
         # print(reid_net)
@@ -48,8 +48,8 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             print(cam_map_i.shape)
 
             # 原始图像归一化
-            MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
-            STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+            MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1).to(device)
+            STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1).to(device)
             img_i = img_i.view(C, H, W)
             img_i = img_i * STD + MEAN
             img_i = transforms.ToPILImage()(img_i)
