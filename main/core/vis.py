@@ -20,6 +20,14 @@ def visualization(config, reid_net, train_loader, query_loader, gallery_loader, 
 
 
 def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwargs):
+    actmap_dir = os.path.join(config.SAVE.OUTPUT_PATH, "actmap/")
+    if not os.path.exists(actmap_dir):
+        os.makedirs(actmap_dir)
+        print("Successfully make dirs: {}".format(dir))
+    else:
+        shutil.rmtree(actmap_dir)
+        os.makedirs(actmap_dir)
+
     for index, data in enumerate(heatmap_loader):
         # 打印进度
         if index % 100 == 0:
@@ -52,30 +60,26 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
                 t.mul_(s).add_(m).clamp_(0, 1)
             img_i = np.uint8(np.floor(img_i.cpu().detach().numpy() * 255))
             img_i = img_i.transpose((1, 2, 0))  # (c, h, w) -> (h, w, c)
+            img_i = img_i[:, :, ::-1]
 
             # 热力图转彩色
-            cam_map_i = plt.cm.jet(cam_map_i)[:, :, :3]
+            cam_map_i = 255 * (cam_map_i - np.min(cam_map_i)) / (np.max(cam_map_i) - np.min(cam_map_i) + 1e-12)
+            cam_map_i = np.uint8(np.floor(cam_map_i))
+            cam_map_i = cv2.applyColorMap(cam_map_i, cv2.COLORMAP_JET)
 
             # 原始图像和热力图相互叠加
             ALPHA = 0.5  # 叠加参数
             mixed_img_i = (1 - ALPHA) * img_i + ALPHA * cam_map_i
-            mixed_img_i = np.clip(mixed_img_i * 255, 0, 255).astype(np.uint8)
+            mixed_img_i = np.clip(mixed_img_i, 0, 255).astype(np.uint8)
 
             # 生成网格图像
             GRID_SPACING = 10
             grid_img = 255 * np.ones((H, 3 * W + 2 * GRID_SPACING, 3), dtype=np.uint8)
-            grid_img[:, :W, :] = img_i[:, :, ::-1]
+            grid_img[:, :W, :] = img_i
             grid_img[:, W + GRID_SPACING : 2 * W + GRID_SPACING, :] = cam_map_i
             grid_img[:, 2 * W + 2 * GRID_SPACING :, :] = mixed_img_i
 
             # 保存图像
-            actmap_dir = os.path.join(config.SAVE.OUTPUT_PATH, "actmap/")
-            if not os.path.exists(actmap_dir):
-                os.makedirs(actmap_dir)
-                print("Successfully make dirs: {}".format(dir))
-            else:
-                shutil.rmtree(actmap_dir)
-                os.makedirs(actmap_dir)
             random_number = random.randint(100000, 999999)
             filename = os.path.join(actmap_dir, str(pid[i].item()) + "_" + str(camid[i].item()) + "_" + str(random_number) + ".jpg")
             print(filename)
