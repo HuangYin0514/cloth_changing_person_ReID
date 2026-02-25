@@ -33,7 +33,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
 
         #  初始化CAM
         # target_layer = reid_net.layer4[-1]  # ResNet50最后一个卷积层
-        target_layer = reid_net.msi[-1]
+        target_layer = reid_net.msi
         cam = GradCAMpp(reid_net, target_layer)
 
         # 生成热力图
