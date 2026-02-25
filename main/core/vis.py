@@ -43,7 +43,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             print(img_i.shape)
 
             # 生成热力图
-            cam_map_i = cam(img_i.view(1, C, H, W))  # [C, H, W]
+            cam_map_i = cam(img_i.view(1, C, H, W))  # [1, C, H, W]
 
             # 原始图像格式转换
             img_i = transforms.ToPILImage()(img_i)
@@ -52,7 +52,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             # 热力图归一化
             MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
             STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
-            cam_map_i = cam_map_i.view(1, C, H, W)
+            cam_map_i = cam_map_i.view(C, H, W)
             cam_map_i = cam_map_i * STD + MEAN
             cam_map_i = cam_map_i.view(C, H, W)
 
