@@ -82,7 +82,6 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             # 保存图像
             random_number = random.randint(100000, 999999)
             filename = os.path.join(actmap_dir, str(pid[i].item()) + "_" + str(camid[i].item()) + "_" + str(random_number) + ".jpg")
-            print(filename)
             cv2.imwrite(filename, grid_img)
 
 
