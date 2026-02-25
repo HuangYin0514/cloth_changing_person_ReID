@@ -30,6 +30,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         img, pid, camid, clotheid = img.to(device), pid.to(device), camid.to(device), clotheid.to(device)
 
         B, C, H, W = img.shape
+        print(img.shape)
 
         #  初始化CAM
         target_layer = reid_net.backbone.layer4[-1]  # ResNet50最后一个卷积层
@@ -43,12 +44,8 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             print(img_i.shape)
 
             # 生成热力图
-            cam_map_i = cam(img_i.view(1, C, H, W))  # [1, C, H, W]
+            cam_map_i = cam(img_i.view(1, C, H, W))  # [H, W]
             print(cam_map_i.shape)
-
-            # 原始图像格式转换
-            img_i = transforms.ToPILImage()(img_i)
-            img_i = np.array(img_i) / 255.0
 
             # 热力图归一化
             MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
@@ -58,6 +55,10 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
 
             # 热力图转彩色
             cam_map_i = cv2.applyColorMap(cam_map_i, cv2.COLORMAP_JET)
+
+            # 原始图像格式转换
+            img_i = transforms.ToPILImage()(img_i)
+            img_i = np.array(img_i) / 255.0
 
             # 原始图像和热力图相互叠加
             ALPHA = 0.5  # 叠加参数
