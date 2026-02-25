@@ -41,8 +41,8 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         # print(img.shape)
 
         #  初始化CAM
-        # target_layer = reid_net.backbone.layer4[-1]  # ResNet50最后一个卷积层
-        target_layer = reid_net.msi
+        target_layer = reid_net.backbone  # ResNet50最后一个卷积层
+        # target_layer = reid_net.msi
         cam = GradCAMpp(reid_net, target_layer)
 
         # print(reid_net)
