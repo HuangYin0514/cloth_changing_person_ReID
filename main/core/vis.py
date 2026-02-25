@@ -77,7 +77,9 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
                 shutil.rmtree(actmap_dir)
                 os.makedirs(actmap_dir)
             random_number = random.randint(100000, 999999)
-            cv2.imwrite(os.path.join(actmap_dir, str(pid[i].item()) + "_" + str(camid[i].item()) + "_" + str(random_number) + ".jpg"), grid_img)
+            filename = os.path.join(actmap_dir, str(pid[i].item()) + "_" + str(camid[i].item()) + "_" + str(random_number) + ".jpg")
+            print(filename)
+            cv2.imwrite(filename, grid_img)
 
 
 # def visualization_heatmap(config, reid_net, train_loader, device, *args, **kwargs):
