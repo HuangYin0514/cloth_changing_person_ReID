@@ -47,18 +47,16 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             cam_map_i = cam(img_i.view(1, C, H, W))  # [H, W]
             print(cam_map_i.shape)
 
-            # 热力图归一化
+            # 原始图像归一化
             MEAN = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
             STD = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
-            cam_map_i = cam_map_i.view(1, H, W)
-            cam_map_i = cam_map_i * STD + MEAN
+            img_i = img_i.view(C, H, W)
+            img_i = img_i * STD + MEAN
+            img_i = transforms.ToPILImage()(img_i)
+            img_i = np.array(img_i) / 255.0
 
             # 热力图转彩色
             cam_map_i = cv2.applyColorMap(cam_map_i, cv2.COLORMAP_JET)
-
-            # 原始图像格式转换
-            img_i = transforms.ToPILImage()(img_i)
-            img_i = np.array(img_i) / 255.0
 
             # 原始图像和热力图相互叠加
             ALPHA = 0.5  # 叠加参数
