@@ -36,7 +36,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         target_layer = reid_net.msi
         cam = GradCAMpp(reid_net, target_layer)
 
-        print(reid_net)
+        # print(reid_net)
 
         for i in range(B):
             img_i = img[i]
@@ -44,6 +44,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
 
             # 生成热力图
             cam_map_i = cam(img_i.view(1, C, H, W))  # [1, C, H, W]
+            print(cam_map_i.shape)
 
             # 原始图像格式转换
             img_i = transforms.ToPILImage()(img_i)
