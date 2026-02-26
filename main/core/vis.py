@@ -67,9 +67,6 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             cam_map_i = np.uint8(np.floor(cam_map_i))
             cam_map_i = cv2.applyColorMap(cam_map_i, cv2.COLORMAP_JET)
 
-            mean_vals = cam_map_i.mean(axis=(0, 1), keepdims=True)  # 异常点处理
-            cam_map_i[:20, :20] = mean_vals
-
             # 原始图像和热力图相互叠加
             ALPHA = 0.5  # 叠加参数
             mixed_img_i = (1 - ALPHA) * img_i + ALPHA * cam_map_i
