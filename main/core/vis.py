@@ -41,8 +41,8 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         # print(img.shape)
 
         #  初始化CAM
-        target_layer = reid_net.backbone  # ResNet50最后一个卷积层
-        # target_layer = reid_net.msi
+        # target_layer = reid_net.backbone  # ResNet50最后一个卷积层
+        target_layer = reid_net.msi
         cam = GradCAMpp(reid_net, target_layer)
 
         print(reid_net)
@@ -66,6 +66,9 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             cam_map_i = 255 * (cam_map_i - np.min(cam_map_i)) / (np.max(cam_map_i) - np.min(cam_map_i) + 1e-12)
             cam_map_i = np.uint8(np.floor(cam_map_i))
             cam_map_i = cv2.applyColorMap(cam_map_i, cv2.COLORMAP_JET)
+
+            mean_vals = cam_map_i.mean(dim=(1, 2), keepdim=True)  # 异常点处理
+            cam_map_i[:, :2, :2] = mean_vals
 
             # 原始图像和热力图相互叠加
             ALPHA = 0.5  # 叠加参数
