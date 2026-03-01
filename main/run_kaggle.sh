@@ -36,8 +36,8 @@ VERSION_NAME="259-Vis_rank"
 mkdir -p results/outputs/models
 gdown -O results/outputs/models/model_99.pth 1pvQzkwUeK06jnik1hFG9yryTHeOwZKeu
 python vis_main.py --config_file "config/method.yml" TASK.NOTES=245-Vis_rank TEST.RESUME_EPOCH=99
-tar -czf ../result_baseline.tar.gz results
-rm -rf results/outputs/*
+# tar -czf ../result_baseline.tar.gz results
+# rm -rf results/outputs/*
 echo -e "\n✅ $VERSION_NAME 成功：已运行完成！"
 
 # =================== 基线模型  ==============================
