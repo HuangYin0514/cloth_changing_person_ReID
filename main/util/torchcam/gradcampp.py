@@ -91,6 +91,7 @@ class GradCAMpp:
         ###############
         mean_vals = cam.mean(dim=(2, 3), keepdim=True)  # 异常点处理
         cam[:, :, :3, :2] = mean_vals
+        cam[:, :, :3, 2:] = mean_vals
         ###############
 
         # 6. ReLU激活（只保留正贡献）+ 归一化
