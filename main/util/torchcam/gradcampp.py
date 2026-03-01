@@ -89,8 +89,8 @@ class GradCAMpp:
         cam = (weights * acts).sum(dim=1, keepdim=True)  # torch.Size([B, 1, H, W])
 
         ###############
-        # mean_vals = cam.mean(dim=(2, 3), keepdim=True)  # 异常点处理
-        # cam[:, :, :3, :2] = mean_vals
+        mean_vals = cam.mean(dim=(2, 3), keepdim=True)  # 异常点处理
+        cam[:, :, :3, :2] = mean_vals
         ###############
 
         # 6. ReLU激活（只保留正贡献）+ 归一化

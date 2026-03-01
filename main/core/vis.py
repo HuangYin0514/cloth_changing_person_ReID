@@ -46,7 +46,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         cam = GradCAMpp(reid_net, target_layer)
         # cam = GradCAM(reid_net, target_layer)
         ##################
-        cam_2 = GradCAMpp(reid_net, reid_net.backbone.layer4)
+        cam_2 = GradCAMpp(reid_net, reid_net.backbone.layer3)
         ##################
         # print(reid_net)
 
