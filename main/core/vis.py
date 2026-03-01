@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from reid import evaluate_ltcc
 from torchvision import transforms
-from util import GradCAMpp, time_now
+from util import GradCAM, GradCAMpp, time_now
 
 from .test import cosine_dist, euclidean_dist, get_data, get_distmat, test
 
@@ -43,7 +43,8 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         #  初始化CAM
         # target_layer = reid_net.backbone  # ResNet50最后一个卷积层
         target_layer = reid_net.msi
-        cam = GradCAMpp(reid_net, target_layer)
+        # cam = GradCAMpp(reid_net, target_layer)
+        cam = GradCAM(reid_net, target_layer)
 
         # print(reid_net)
 

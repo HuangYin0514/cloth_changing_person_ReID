@@ -89,14 +89,39 @@ class GradCAMpp:
         cam = (weights * acts).sum(dim=1, keepdim=True)  # torch.Size([B, 1, H, W])
 
         ###############
-        mean_vals = cam.mean(dim=(2, 3), keepdim=True)  # 异常点处理
-        cam[:, :, :3, :2] = mean_vals
+        # mean_vals = cam.mean(dim=(2, 3), keepdim=True)  # 异常点处理
+        # cam[:, :, :3, :2] = mean_vals
         ###############
 
         # 6. ReLU激活（只保留正贡献）+ 归一化
         cam = F.relu(cam)
         cam = cam - cam.min()
         cam = cam / (cam.max() + 1e-8)  # 归一化到0-1
+
+        ###############
+        # plt.figure(figsize=(12, 5))
+
+        # # 原始图片
+        # plt.subplot(1, 3, 1)
+        # plt.imshow(input_tensor.squeeze().cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])
+        # plt.axis("off")
+        # plt.title("Original Image")
+
+        # # GradCAM++结果
+        # plt.subplot(1, 3, 2)
+        # plt.imshow(cam.squeeze().cpu().numpy())
+        # plt.axis("off")
+        # plt.title("GradCAM++ Result")
+
+        # plt.subplot(1, 3, 3)
+        # plt_resize_input_tensor = F.interpolate(input_tensor, size=cam.shape[2:], mode="bilinear", align_corners=False)
+        # plt_resize_input_tensor = 0.5 * plt_resize_input_tensor + 0.5 * cam
+        # plt.imshow(plt_resize_input_tensor.squeeze().cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])
+        # plt.axis("off")
+        # plt.title("GradCAM++ Result")
+
+        # plt.show(block=True)  # 防止窗口一闪而过
+        ###############
 
         # 7. 上采样到输入尺寸，去除batch维度
         cam = F.interpolate(cam, size=input_tensor.shape[2:], mode="bilinear", align_corners=False)
