@@ -45,8 +45,19 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         target_layer = reid_net.msi
         cam = GradCAMpp(reid_net, target_layer)
         # cam = GradCAM(reid_net, target_layer)
+
         ##################
-        cam_2 = GradCAMpp(reid_net, reid_net.backbone.layer3)
+        def aux_cam(ori_cam_map, img):
+            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer3)
+            cam_map = aux_cam_fn(img_i.view(1, C, H, W))  # [H, W]
+            ori_cam_map += cam_map
+
+            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer4)
+            cam_map = aux_cam_fn(img_i.view(1, C, H, W))  # [H, W]
+            ori_cam_map += cam_map
+
+            return ori_cam_map
+
         ##################
         # print(reid_net)
 
@@ -57,8 +68,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
             cam_map_i = cam(img_i.view(1, C, H, W))  # [H, W]
 
             ##################
-            cam_map_2 = cam_2(img_i.view(1, C, H, W))  # [H, W]
-            cam_map_i += cam_map_2
+            cam_map_i = aux_cam(cam_map_i, img_i)
             ##################
 
             # 原始图像归一化
