@@ -48,11 +48,11 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
 
         ##################
         def aux_cam(ori_cam_map, img):
-            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer3)
+            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer3[-1])
             cam_map = aux_cam_fn(img_i.view(1, C, H, W))  # [H, W]
             ori_cam_map += cam_map
 
-            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer4)
+            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer4[-1])
             cam_map = aux_cam_fn(img_i.view(1, C, H, W))  # [H, W]
             ori_cam_map += cam_map
 
