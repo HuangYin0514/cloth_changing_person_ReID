@@ -136,8 +136,8 @@ def plot_results(net_left, net_right, history):
     t_left = torch.linspace(0, t0, 500, device=device).reshape(-1, 1)
     t_right = torch.linspace(t0, t_final, 500, device=device).reshape(-1, 1)
 
-    net_left.eval()
-    net_right.eval()
+    # net_left.eval()
+    # net_right.eval()
 
     theta_left, _, _ = net_left.derivatives(t_left)
     theta_right, _, _ = net_right.derivatives(t_right)
@@ -213,7 +213,7 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # 训练
-    net_left, net_right, history = train_pendulum(epochs=10000, n_coll=500)
+    net_left, net_right, history = train_pendulum(epochs=10, n_coll=500)
 
     # 绘图
     plot_results(net_left, net_right, history)
