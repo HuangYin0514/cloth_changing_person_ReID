@@ -133,8 +133,8 @@ def plot_results(net_left, net_right, history):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     omega0 = np.sqrt(g / L)
 
-    t_left = torch.linspace(0, t0, 500, device=device).reshape(-1, 1)
-    t_right = torch.linspace(t0, t_final, 500, device=device).reshape(-1, 1)
+    t_left = torch.linspace(0, t0, 500, dtype=torch.float32, device=device).reshape(-1, 1)
+    t_right = torch.linspace(t0, t_final, 500, dtype=torch.float32, device=device).reshape(-1, 1)
 
     # net_left.eval()
     # net_right.eval()
