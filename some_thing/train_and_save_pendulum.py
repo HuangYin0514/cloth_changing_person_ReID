@@ -2,9 +2,9 @@
 train_and_save_pendulum.py - 训练并保存冲击摆模型
 """
 
-import torch
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
 
 # 物理参数
 g = 9.81
@@ -139,12 +139,11 @@ def plot_results(net_left, net_right, history):
     net_left.eval()
     net_right.eval()
 
-    with torch.no_grad():
-        theta_left, _, _ = net_left.derivatives(t_left)
-        theta_right, _, _ = net_right.derivatives(t_right)
+    theta_left, _, _ = net_left.derivatives(t_left)
+    theta_right, _, _ = net_right.derivatives(t_right)
 
-    t_np = np.concatenate([t_left.cpu().numpy().flatten(), t_right.cpu().numpy().flatten()])
-    theta_pinn = np.concatenate([theta_left.cpu().numpy().flatten(), theta_right.cpu().numpy().flatten()])
+    t_np = np.concatenate([t_left.detach().cpu().numpy().flatten(), t_right.detach().cpu().numpy().flatten()])
+    theta_pinn = np.concatenate([theta_left.detach().cpu().numpy().flatten(), theta_right.detach().cpu().numpy().flatten()])
 
     # 精确解
     t_exact = np.linspace(0, t_final, 1000)
