@@ -64,8 +64,8 @@ def train_pendulum(epochs=10000, n_coll=500):
 
     for epoch in range(epochs):
         # 配点
-        t_left = torch.rand(n_coll, 1, dtype=torch.float32, device=device) * t0
-        t_right = torch.rand(n_coll, 1, dtype=torch.float32, device=device) * (t_final - t0) + t0
+        t_left = torch.rand(n_coll, 1, device=device) * t0
+        t_right = torch.rand(n_coll, 1, device=device) * (t_final - t0) + t0
 
         # 左子域
         theta_left, theta_dot_left, theta_ddot_left = net_left.derivatives(t_left)
@@ -133,8 +133,8 @@ def plot_results(net_left, net_right, history):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     omega0 = np.sqrt(g / L)
 
-    t_left = torch.linspace(0, t0, 500, dtype=torch.float32, device=device).reshape(-1, 1)
-    t_right = torch.linspace(t0, t_final, 500, dtype=torch.float32, device=device).reshape(-1, 1)
+    t_left = torch.linspace(0, t0, 500, device=device).reshape(-1, 1)
+    t_right = torch.linspace(t0, t_final, 500, device=device).reshape(-1, 1)
 
     # net_left.eval()
     # net_right.eval()
@@ -213,7 +213,7 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # 训练
-    net_left, net_right, history = train_pendulum(epochs=10, n_coll=500)
+    net_left, net_right, history = train_pendulum(epochs=10000, n_coll=500)
 
     # 绘图
     plot_results(net_left, net_right, history)
