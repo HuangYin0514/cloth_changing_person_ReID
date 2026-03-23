@@ -64,8 +64,8 @@ def train_pendulum(epochs=10000, n_coll=500):
 
     for epoch in range(epochs):
         # 配点
-        t_left = torch.rand(n_coll, 1, device=device) * t0
-        t_right = torch.rand(n_coll, 1, device=device) * (t_final - t0) + t0
+        t_left = torch.rand(n_coll, 1, dtype=torch.float32, device=device) * t0
+        t_right = torch.rand(n_coll, 1, dtype=torch.float32, device=device) * (t_final - t0) + t0
 
         # 左子域
         theta_left, theta_dot_left, theta_ddot_left = net_left.derivatives(t_left)
