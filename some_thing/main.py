@@ -160,9 +160,7 @@ class PINN(nn.Module):
         else:
             return out, None
 
-    def derivatives(
-        self, t: torch.Tensor, requires_grad: bool = True
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def derivatives(self, t: torch.Tensor, requires_grad: bool = True) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Compute first and second derivatives of q with respect to time.
 
@@ -188,17 +186,11 @@ class PINN(nn.Module):
         # 对 q 的每个维度单独求导，保证维度匹配
         for i in range(n):
             # 第一阶导数：对 q[:,i] 求导
-            q_dot_i = torch.autograd.grad(
-                q[:, i], t, grad_outputs=torch.ones_like(q[:, i]), 
-                create_graph=True, retain_graph=True
-            )[0]
+            q_dot_i = torch.autograd.grad(q[:, i], t, grad_outputs=torch.ones_like(q[:, i]), create_graph=True, retain_graph=True)[0]
             q_dot[:, i] = q_dot_i.squeeze(-1)  # 去掉最后一维，匹配 q 的维度
 
             # 第二阶导数：对 q_dot_i 求导
-            q_ddot_i = torch.autograd.grad(
-                q_dot_i, t, grad_outputs=torch.ones_like(q_dot_i), 
-                create_graph=True, retain_graph=True
-            )[0]
+            q_ddot_i = torch.autograd.grad(q_dot_i, t, grad_outputs=torch.ones_like(q_dot_i), create_graph=True, retain_graph=True)[0]
             q_ddot[:, i] = q_ddot_i.squeeze(-1)
 
         return q, q_dot, q_ddot
@@ -248,9 +240,7 @@ class NonSmoothLoss:
         _, lam_left = network_left.forward(t_left)
 
         # PDE residual using correct physics
-        pde_res_left = self.dynamics.pde_residual_locked(
-            q_left, q_dot_left, q_ddot_left, lam_left
-        )
+        pde_res_left = self.dynamics.pde_residual_locked(q_left, q_dot_left, q_ddot_left, lam_left)
         loss_pde_left = torch.mean(pde_res_left**2)
 
         # Constraint violation
@@ -263,9 +253,7 @@ class NonSmoothLoss:
         # ===== Right subdomain (released phase) =====
         q_right, q_dot_right, q_ddot_right = network_right.derivatives(t_right)
 
-        pde_res_right = self.dynamics.pde_residual_free(
-            q_right, q_dot_right, q_ddot_right
-        )
+        pde_res_right = self.dynamics.pde_residual_free(q_right, q_dot_right, q_ddot_right)
         loss_pde_right = torch.mean(pde_res_right**2)
 
         losses["pde_right"] = loss_pde_right
@@ -290,17 +278,13 @@ class NonSmoothLoss:
         losses["velocity_jump"] = loss_velocity_jump
 
         # ===== Initial conditions (left subdomain) =====
-        t0_tensor = torch.tensor(
-            [[0.0]], device=self.config.device, dtype=torch.float32
-        )
+        t0_tensor = torch.tensor([[0.0]], device=self.config.device, dtype=torch.float32)
         q0, q_dot0, _ = network_left.derivatives(t0_tensor)
 
         # Initial angles (assuming starting from rest with initial relative angle)
         theta1_initial = 0.0
         theta2_initial = -self.params.theta0
-        q0_target = torch.tensor(
-            [[theta1_initial, theta2_initial]], device=self.config.device
-        )
+        q0_target = torch.tensor([[theta1_initial, theta2_initial]], device=self.config.device)
 
         # Initial velocities (starting from rest)
         q_dot0_target = torch.zeros_like(q0_target)
@@ -319,8 +303,7 @@ class NonSmoothLoss:
             self.config.lambda_pde * (losses["pde_left"] + losses["pde_right"])
             + self.config.lambda_constraint * losses["constraint"]
             + self.config.lambda_ic * (losses["ic_q"] + losses["ic_qdot"])
-            + self.config.lambda_jump
-            * (losses["position_jump"] + losses["velocity_jump"])
+            + self.config.lambda_jump * (losses["position_jump"] + losses["velocity_jump"])
         )
         return total
 
@@ -363,9 +346,7 @@ def train_pinn_hinge(
 
     # Create optimizers
     optimizer_left = optim.Adam(network_left.parameters(), lr=config.learning_rate_adam)
-    optimizer_right = optim.Adam(
-        network_right.parameters(), lr=config.learning_rate_adam
-    )
+    optimizer_right = optim.Adam(network_right.parameters(), lr=config.learning_rate_adam)
 
     # History
     history = {
@@ -380,16 +361,10 @@ def train_pinn_hinge(
     for epoch in range(config.adam_epochs):
         # Generate collocation points
         t_left = torch.rand(config.n_collocation, 1, device=config.device) * params.t0
-        t_right = (
-            torch.rand(config.n_collocation, 1, device=config.device)
-            * (params.t_final - params.t0)
-            + params.t0
-        )
+        t_right = torch.rand(config.n_collocation, 1, device=config.device) * (params.t_final - params.t0) + params.t0
 
         # Compute losses
-        losses = loss_fn.compute_loss(
-            network_left, network_right, t_left, t_right, params.t0
-        )
+        losses = loss_fn.compute_loss(network_left, network_right, t_left, t_right, params.t0)
         loss_total = loss_fn.total_loss(losses)
 
         # Backpropagation
@@ -403,15 +378,11 @@ def train_pinn_hinge(
         history["loss"].append(loss_total.item())
         history["loss_pde_left"].append(losses["pde_left"].item())
         history["loss_pde_right"].append(losses["pde_right"].item())
-        history["loss_jump"].append(
-            (losses["position_jump"] + losses["velocity_jump"]).item()
-        )
+        history["loss_jump"].append((losses["position_jump"] + losses["velocity_jump"]).item())
         history["loss_ic"].append((losses["ic_q"] + losses["ic_qdot"]).item())
 
         if verbose and (epoch + 1) % 1000 == 0:
-            print(
-                f"Epoch {epoch+1}/{config.adam_epochs}: Loss = {loss_total.item():.6e}"
-            )
+            print(f"Epoch {epoch+1}/{config.adam_epochs}: Loss = {loss_total.item():.6e}")
 
     return network_left, network_right, history
 
@@ -496,29 +467,21 @@ def plot_solution(
     # 3. 修复：计算一阶导数（保证维度和 q 一致）
     # 获取 q 的维度：(500, n)，n 是状态维度
     batch_size, n = q_left_grad.shape
-    
+
     # 初始化导数张量（和 q 维度一致）
     q_dot_left = torch.zeros_like(q_left_grad)
     q_dot_right = torch.zeros_like(q_right_grad)
-    
+
     # 遍历每个状态维度单独求导
     for i in range(n):
         # 左侧导数：对 q_left_grad[:, i] 求导（避免sum压缩维度）
         grad_left = torch.autograd.grad(
-            q_left_grad[:, i],  # 取第i个状态维度
-            t_left_grad,
-            grad_outputs=torch.ones_like(q_left_grad[:, i]),  # 保持批次维度
-            create_graph=True
+            q_left_grad[:, i], t_left_grad, grad_outputs=torch.ones_like(q_left_grad[:, i]), create_graph=True  # 取第i个状态维度  # 保持批次维度
         )[0]
         q_dot_left[:, i] = grad_left.squeeze(-1)  # 去掉 (500,1) 中的 1，变为 (500,)
-        
+
         # 右侧导数：同理
-        grad_right = torch.autograd.grad(
-            q_right_grad[:, i],
-            t_right_grad,
-            grad_outputs=torch.ones_like(q_right_grad[:, i]),
-            create_graph=True
-        )[0]
+        grad_right = torch.autograd.grad(q_right_grad[:, i], t_right_grad, grad_outputs=torch.ones_like(q_right_grad[:, i]), create_graph=True)[0]
         q_dot_right[:, i] = grad_right.squeeze(-1)
 
     axes[1].plot(
@@ -633,12 +596,8 @@ if __name__ == "__main__":
         output_lambda=False,
     )
 
-    print(
-        f"Network left parameters: {sum(p.numel() for p in network_left.parameters())}"
-    )
-    print(
-        f"Network right parameters: {sum(p.numel() for p in network_right.parameters())}"
-    )
+    print(f"Network left parameters: {sum(p.numel() for p in network_left.parameters())}")
+    print(f"Network right parameters: {sum(p.numel() for p in network_right.parameters())}")
 
     # Test forward pass
     t_test = torch.rand(10, 1)
@@ -646,9 +605,7 @@ if __name__ == "__main__":
     q_right, _ = network_right(t_test)
 
     print(f"Test input shape: {t_test.shape}")
-    print(
-        f"Test output shape (left): {q_left.shape}, lambda: {lam_left.shape if lam_left is not None else 'None'}"
-    )
+    print(f"Test output shape (left): {q_left.shape}, lambda: {lam_left.shape if lam_left is not None else 'None'}")
     print(f"Test output shape (right): {q_right.shape}")
 
     # Test physics
@@ -659,24 +616,10 @@ if __name__ == "__main__":
 
     print("\nAll tests passed! Ready to run experiments.")
 
+    print(TrainingConfig.device)
 
-    network_left, network_right, history = train_pinn_hinge(
-            network_left,
-            network_right,
-            params,
-            config,
-            verbose=True
-    ) 
-    plot_solution(network_left,network_right,params,params.t0,params.t_final,save_path="solution.png")
-    plot_training_history(history,save_path="training_history.png")
+    network_left, network_right, history = train_pinn_hinge(network_left, network_right, params, config, verbose=True)
+    plot_solution(network_left, network_right, params, params.t0, params.t_final, save_path="solution.png")
+    plot_training_history(history, save_path="training_history.png")
 
     print("Done!")
-
-    # def plot_solution(
-    # network_left: PINN,
-    # network_right: PINN,
-    # params: HingeParams,
-    # t0: float,
-    # t_final: float,
-    # exact_solution: Optional[Callable] = None,
-    # save_path: Optional[str] = None,
