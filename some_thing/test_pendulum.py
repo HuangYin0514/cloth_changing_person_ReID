@@ -87,12 +87,12 @@ def main():
         print("请先运行 train_pendulum_complete.py 训练模型")
         return
 
-    net_left.to(device)
-    net_right.to(device)
+    net_left.to(device).float()
+    net_right.to(device).float()
 
     # 生成测试点
-    t_left = torch.linspace(0, t0, 1000, device=device).reshape(-1, 1)
-    t_right = torch.linspace(t0, t_final, 1000, device=device).reshape(-1, 1)
+    t_left = torch.linspace(0, t0, 1000, dtype=torch.float32, device=device).reshape(-1, 1)
+    t_right = torch.linspace(t0, t_final, 1000, dtype=torch.float32, device=device).reshape(-1, 1)
 
     # 预测
     theta_left, _, _ = net_left.derivatives(t_left)
@@ -117,7 +117,7 @@ def main():
     print(f"  最大误差: {max_error:.4e} rad ({max_error*180/np.pi:.2f}°)")
 
     # 检查模型是否真的训练过（通过检查t0时刻的值）
-    t0_tensor = torch.tensor([[t0]], device=device)
+    t0_tensor = torch.tensor([[t0]], dtype=torch.float32, device=device)
 
     theta_left_t0, _, _ = net_left.derivatives(t0_tensor)
     theta_right_t0, _, _ = net_right.derivatives(t0_tensor)
