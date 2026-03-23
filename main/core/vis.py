@@ -47,14 +47,14 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
         # cam = GradCAM(reid_net, target_layer)
 
         ##################
-        def aux_cam(ori_cam_map, img):
-            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer3)
+        def aux_cam(ori_cam_map, img_i):
+            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer3[-1])
             cam_map = aux_cam_fn(img_i.view(1, C, H, W))  # [H, W]
-            ori_cam_map += cam_map
+            ori_cam_map += 1 * cam_map
 
-            aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer4)
-            cam_map = aux_cam_fn(img_i.view(1, C, H, W))  # [H, W]
-            ori_cam_map += cam_map
+            # aux_cam_fn = GradCAMpp(reid_net, reid_net.backbone.layer4)
+            # cam_map = aux_cam_fn(img_i.view(1, C, H, W))  # [H, W]
+            # ori_cam_map += cam_map
 
             return ori_cam_map
 
@@ -99,7 +99,7 @@ def visualization_heatmap(config, reid_net, heatmap_loader, device, *args, **kwa
 
             # 保存图像
             random_number = random.randint(100000, 999999)
-            filename = os.path.join(actmap_dir, str(pid[i].item()) + "_" + str(camid[i].item()) + "_" + str(random_number) + ".jpg")
+            filename = os.path.join(actmap_dir, "m_" + str(pid[i].item()) + "_" + str(camid[i].item()) + "_" + str(random_number) + ".jpg")
             cv2.imwrite(filename, grid_img)
 
 

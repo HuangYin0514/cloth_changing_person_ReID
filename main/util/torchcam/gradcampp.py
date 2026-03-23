@@ -88,13 +88,14 @@ class GradCAMpp:
         # 5. 加权求和特征图，生成CAM
         cam = (weights * acts).sum(dim=1, keepdim=True)  # torch.Size([B, 1, H, W])
 
-        ###############
+        ##############
         # mean_vals = cam.mean(dim=(2, 3), keepdim=True)  # 异常点处理
         # cam[:, :, :3, :2] = mean_vals
         # cam[:, :, :3, 2:] = mean_vals
-        cam = F.interpolate(cam[:, :, 3:-3, 2:-2], size=cam.shape[2:], mode="bilinear", align_corners=False)
+        # cam = F.interpolate(cam[:, :, 3:-3, 2:-2], size=cam.shape[2:], mode="bilinear", align_corners=False)
 
-        ###############
+        cam[:, :, :2, -2:] = cam[:, :, -1, -1]
+        ##############
 
         # 6. ReLU激活（只保留正贡献）+ 归一化
         cam = F.relu(cam)
