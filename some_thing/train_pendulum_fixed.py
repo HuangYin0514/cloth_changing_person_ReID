@@ -67,7 +67,7 @@ def train_pendulum_fixed(epochs=20000, n_coll=1000, lr=1e-3):
     optimizer = torch.optim.Adam(list(net_left.parameters()) + list(net_right.parameters()), lr=lr, weight_decay=1e-5)  # 添加权重衰减
 
     # 学习率调度
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2000, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2000)
 
     # 调整损失权重（提高冲击条件权重）
     lambda_pde = 0.1  # 提高PDE权重
