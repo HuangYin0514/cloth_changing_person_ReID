@@ -118,9 +118,9 @@ def main():
 
     # 检查模型是否真的训练过（通过检查t0时刻的值）
     t0_tensor = torch.tensor([[t0]], device=device)
-    with torch.no_grad():
-        theta_left_t0, _, _ = net_left.derivatives(t0_tensor)
-        theta_right_t0, _, _ = net_right.derivatives(t0_tensor)
+
+    theta_left_t0, _, _ = net_left.derivatives(t0_tensor)
+    theta_right_t0, _, _ = net_right.derivatives(t0_tensor)
 
     print(f"\n在冲击时刻 t0 = {t0:.4f} s:")
     print(f"  左网络预测 θ = {theta_left_t0.item():.4f} rad")
