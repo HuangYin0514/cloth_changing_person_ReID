@@ -213,7 +213,7 @@ if __name__ == "__main__":
     print("=" * 60)
 
     # 训练
-    net_left, net_right, history = train_pendulum(epochs=10000, n_coll=500)
+    net_left, net_right, history = train_pendulum(epochs=10, n_coll=500)
 
     # 绘图
     plot_results(net_left, net_right, history)
