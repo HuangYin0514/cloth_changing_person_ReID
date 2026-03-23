@@ -90,12 +90,12 @@ def train_pendulum_fixed(epochs=20000, n_coll=1000, lr=1e-3):
         t_left_normal = torch.rand(n_coll // 2, 1, device=device) * t0
         t_left_fine = torch.rand(n_coll // 2, 1, device=device) * 0.1 + (t0 - 0.05)
         t_left_fine = t_left_fine[t_left_fine >= 0]
-        t_left = torch.cat([t_left_normal, t_left_fine])
+        t_left = torch.cat([t_left_normal, t_left_fine], dim=0)
 
         t_right_normal = torch.rand(n_coll // 2, 1, device=device) * (t_final - t0) + t0
         t_right_fine = torch.rand(n_coll // 2, 1, device=device) * 0.1 + t0
         t_right_fine = t_right_fine[t_right_fine <= t_final]
-        t_right = torch.cat([t_right_normal, t_right_fine])
+        t_right = torch.cat([t_right_normal, t_right_fine], dim=0)
 
         # 左子域
         theta_left, theta_dot_left, theta_ddot_left = net_left.derivatives(t_left)
