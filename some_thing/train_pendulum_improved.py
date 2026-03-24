@@ -46,7 +46,7 @@ def transform_time(t, t0):
 # 网络定义（更深、更宽）
 # ============================================================
 class ImprovedPendulumNet(torch.nn.Module):
-    def __init__(self, neurons=160):
+    def __init__(self, hidden_layers=4, neurons=128):
         super().__init__()
         self.net = torch.nn.Sequential(
             torch.nn.Linear(1, neurons),
