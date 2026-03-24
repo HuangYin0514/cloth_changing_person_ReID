@@ -66,7 +66,7 @@ class ImprovedPendulumNet(torch.nn.Module):
     def derivatives(self, t):
         t.requires_grad_(True)
         t = t.float()
-        q = self.net(t)
+        q = self(t)
         q_dot = torch.autograd.grad(q, t, torch.ones_like(q), create_graph=True, retain_graph=True)[0]
         q_ddot = torch.autograd.grad(q_dot, t, torch.ones_like(q_dot), create_graph=True)[0]
         return q, q_dot, q_ddot
