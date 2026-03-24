@@ -51,7 +51,7 @@ class GlobalTimeNet(torch.nn.Module):
     def get_derivs(self, t):
         # 自动微分，全局 t
         t.requires_grad_(True)
-        q = self.forward(t)
+        q = self.forward(t.float())
         qt = torch.autograd.grad(q.sum(), t, create_graph=True)[0]
         qtt = torch.autograd.grad(qt.sum(), t, create_graph=True)[0]
         return q, qt, qtt
