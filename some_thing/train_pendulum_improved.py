@@ -65,6 +65,14 @@ class ImprovedPendulumNet(torch.nn.Module):
         x = self.net(t)
         return self.output(torch.sin(x))
 
+    def derivatives(self, t):
+        t.requires_grad_(True)
+        t = t.float()
+        q = self.net(t)
+        q_dot = torch.autograd.grad(q, t, torch.ones_like(q), create_graph=True, retain_graph=True)[0]
+        q_ddot = torch.autograd.grad(q_dot, t, torch.ones_like(q_dot), create_graph=True)[0]
+        return q, q_dot, q_ddot
+
 
 def pde_residual(theta, theta_dot, theta_ddot):
     """PDE残差: θ̈ + (g/L) sinθ = 0"""
