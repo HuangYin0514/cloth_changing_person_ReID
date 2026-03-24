@@ -102,7 +102,7 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
 
     net = ImprovedPendulumNet(hidden_layers=4, neurons=128).to(device)
     optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2000, verbose=True)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2000)
 
     # 损失权重（逐步增加冲击权重）
     lambda_pde = 1.0
