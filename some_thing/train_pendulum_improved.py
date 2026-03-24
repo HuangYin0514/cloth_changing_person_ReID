@@ -51,7 +51,7 @@ class ImprovedPendulumNet(torch.nn.Module):
         layers = [torch.nn.Linear(1, neurons), torch.nn.Tanh()]
         for _ in range(hidden_layers - 1):
             layers.append(torch.nn.Linear(neurons, neurons))
-            layers.append(torch.sin)
+            layers.append(torch.nn.SiLU())
         layers.append(torch.nn.Linear(neurons, 1))
         self.net = torch.nn.Sequential(*layers)
 
