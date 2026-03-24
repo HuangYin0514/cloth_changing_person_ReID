@@ -48,24 +48,20 @@ def transform_time(t, t0):
 class ImprovedPendulumNet(torch.nn.Module):
     def __init__(self, hidden_layers=4, neurons=128):
         super().__init__()
-        layers = [torch.nn.Linear(1, neurons), torch.nn.Tanh()]
-        for _ in range(hidden_layers - 1):
-            layers.append(torch.nn.Linear(neurons, neurons))
-            layers.append(torch.nn.Tanh())
-        layers.append(torch.nn.Linear(neurons, 1))
-        self.net = torch.nn.Sequential(*layers)
-
-        # 初始化权重
-        self._init_weights()
-
-    def _init_weights(self):
-        for m in self.net:
-            if isinstance(m, torch.nn.Linear):
-                torch.nn.init.xavier_normal_(m.weight)
-                torch.nn.init.zeros_(m.bias)
+        self.net = torch.nn.Sequential(
+            torch.nn.Linear(1, neurons),
+            torch.nn.Tanh(),
+            torch.nn.Linear(neurons, neurons),
+            torch.nn.SiLU(),
+            torch.nn.Linear(neurons, neurons),
+            torch.nn.SiLU(),
+            torch.nn.Linear(neurons, neurons),
+        )
+        self.output = torch.nn.Linear(neurons, 1)
 
     def forward(self, t):
-        return self.net(t)
+        x = self.net(t)
+        return self.output(torch.sin(x))
 
     def derivatives(self, t):
         t.requires_grad_(True)
