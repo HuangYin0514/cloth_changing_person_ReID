@@ -56,12 +56,10 @@ class ImprovedPendulumNet(torch.nn.Module):
             torch.nn.Linear(neurons, neurons),
             torch.nn.SiLU(),
             torch.nn.Linear(neurons, neurons),
-            torch.nn.SiLU(),
         )
         self.output = torch.nn.Linear(neurons, 1)
 
     def forward(self, t):
-        # 全程只使用 全局时间 t，无任何分段/坐标变换
         x = self.net(t)
         return self.output(torch.sin(x))
 
