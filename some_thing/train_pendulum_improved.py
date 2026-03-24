@@ -170,7 +170,7 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
         theta_left_near, _, _ = net.derivatives(t_left_near)
         theta_right_near, _, _ = net.derivatives(t_right_near)
 
-        loss_continuity = torch.mean((theta_left_near[-1] - theta_right_near[0]) ** 2) * 100.0
+        loss_continuity = torch.mean((theta_left_near[-1] - theta_right_near[0]) ** 2) * 0.0
 
         loss_jump = loss_pos_jump + loss_vel_jump + loss_continuity
 
@@ -306,7 +306,7 @@ def plot_results(net, history):
 # ============================================================
 if __name__ == "__main__":
     # 训练
-    net, history = train_improved(epochs=15000, n_coll=800, lr=1e-3)
+    net, history = train_improved(epochs=6000, n_coll=800, lr=1e-3)
 
     # 测试并绘图
     plot_results(net, history)
