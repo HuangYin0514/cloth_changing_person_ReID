@@ -142,10 +142,9 @@ def train(epochs=22000, lr=1.2e-3):
 # ============================================================
 def plot(model, history, device):
     t = torch.linspace(0, t_final, 1000, device=device).reshape(-1, 1)
-    with torch.no_grad():
-        pred = model(t).cpu().numpy().flatten()
+    pred = model(t).deatch().cpu().numpy().flatten()
 
-    t_np = t.cpu().numpy().flatten()
+    t_np = t.deatch().cpu().numpy().flatten()
     exact = exact_solution(t_np)
     error = np.abs(pred - exact)
     l2_err = np.sqrt(np.mean(error**2))
