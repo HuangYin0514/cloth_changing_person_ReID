@@ -48,25 +48,29 @@ def transform_time(t, t0):
 class ImprovedPendulumNet(torch.nn.Module):
     def __init__(self, hidden_layers=4, neurons=128):
         super().__init__()
-        self.net = torch.nn.Sequential(
-            torch.nn.Linear(1, neurons),
-            torch.nn.Tanh(),
-            torch.nn.Linear(neurons, neurons),
-            torch.nn.SiLU(),
-            torch.nn.Linear(neurons, neurons),
-            torch.nn.SiLU(),
-            torch.nn.Linear(neurons, neurons),
-        )
-        self.output = torch.nn.Linear(neurons, 1)
+        layers = [torch.nn.Linear(1, neurons), torch.nn.Tanh()]
+        for _ in range(hidden_layers - 1):
+            layers.append(torch.nn.Linear(neurons, neurons))
+            layers.append(torch.nn.Tanh())
+        layers.append(torch.nn.Linear(neurons, 1))
+        self.net = torch.nn.Sequential(*layers)
+
+        # 初始化权重
+        self._init_weights()
+
+    def _init_weights(self):
+        for m in self.net:
+            if isinstance(m, torch.nn.Linear):
+                torch.nn.init.xavier_normal_(m.weight)
+                torch.nn.init.zeros_(m.bias)
 
     def forward(self, t):
-        x = self.net(t)
-        return self.output(torch.sin(x))
+        return self.net(t)
 
     def derivatives(self, t):
         t.requires_grad_(True)
         t = t.float()
-        q = self.forward(t)
+        q = self.net(t)
         q_dot = torch.autograd.grad(q, t, torch.ones_like(q), create_graph=True, retain_graph=True)[0]
         q_ddot = torch.autograd.grad(q_dot, t, torch.ones_like(q_dot), create_graph=True)[0]
         return q, q_dot, q_ddot
@@ -101,7 +105,7 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2000)
 
     # 损失权重（逐步增加冲击权重）
-    lambda_pde = 1.0
+    lambda_pde = 10.0
     lambda_ic = 10.0
 
     history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
@@ -116,7 +120,7 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
 
     for epoch in range(epochs):
         # 动态调整冲击权重
-        lambda_jump = min(100.0, (epoch / 5000) * 100.0)
+        lambda_jump = 10.0
 
         # ===== 配点生成 =====
         # 普通配点
@@ -170,7 +174,7 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
         theta_left_near, _, _ = net.derivatives(t_left_near)
         theta_right_near, _, _ = net.derivatives(t_right_near)
 
-        loss_continuity = torch.mean((theta_left_near[-1] - theta_right_near[0]) ** 2) * 0.0
+        loss_continuity = torch.mean((theta_left_near[-1] - theta_right_near[0]) ** 2) * 100.0
 
         loss_jump = loss_pos_jump + loss_vel_jump + loss_continuity
 
@@ -306,7 +310,7 @@ def plot_results(net, history):
 # ============================================================
 if __name__ == "__main__":
     # 训练
-    net, history = train_improved(epochs=6000, n_coll=800, lr=1e-3)
+    net, history = train_improved(epochs=20000, n_coll=800, lr=1e-3)
 
     # 测试并绘图
     plot_results(net, history)
