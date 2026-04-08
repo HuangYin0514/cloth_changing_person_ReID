@@ -110,6 +110,8 @@ def train_pendulum_fixed(epochs=15000, n_coll=800, lr=1e-3):
     n_ic_region = 200
     n_normal = 600
 
+    history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
+
     for epoch in range(epochs):
         # ===== 配点生成（t=0附近加密）=====
         t_ic_region = torch.rand(n_ic_region, 1, device=device) * 0.01
@@ -159,7 +161,6 @@ def train_pendulum_fixed(epochs=15000, n_coll=800, lr=1e-3):
         optimizer.step()
 
         # ===== 记录 =====
-        history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
         history["loss"].append(loss_total.item())
         history["pde"].append(loss_pde.item())
         history["ic"].append(loss_ic.item())
