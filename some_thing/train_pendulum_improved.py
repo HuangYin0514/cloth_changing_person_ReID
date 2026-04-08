@@ -106,7 +106,7 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
 
     # 损失权重（逐步增加冲击权重）
     lambda_pde = 1.0
-    lambda_ic = 100.0
+    lambda_ic = 1.0
 
     history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
 
