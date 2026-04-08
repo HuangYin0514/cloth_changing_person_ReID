@@ -158,6 +158,14 @@ def train_pendulum_fixed(epochs=15000, n_coll=800, lr=1e-3):
         torch.nn.utils.clip_grad_norm_(net.parameters(), 1.0)
         optimizer.step()
 
+        # ===== 记录 =====
+        history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
+        history["loss"].append(loss_total.item())
+        history["pde"].append(loss_pde.item())
+        history["ic"].append(loss_ic.item())
+        history["jump"].append(loss_jump.item())
+        history["t0_pred"].append(theta_t0.item())
+
         if (epoch + 1) % 1000 == 0:
             print(
                 f"Epoch {epoch+1:6d}: Loss={loss_total.item():.4e}, "

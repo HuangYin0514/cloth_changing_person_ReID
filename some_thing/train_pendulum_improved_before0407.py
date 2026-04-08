@@ -108,8 +108,6 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
     lambda_pde = 1.0
     lambda_ic = 10.0
 
-    history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
-
     print("\n训练配置:")
     print(f"  训练轮数: {epochs}")
     print(f"  配点数: {n_coll}")
@@ -189,6 +187,7 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
         scheduler.step(loss_total)
 
         # ===== 记录 =====
+        history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
         history["loss"].append(loss_total.item())
         history["pde"].append(loss_pde.item())
         history["ic"].append(loss_ic.item())
