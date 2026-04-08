@@ -105,8 +105,8 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2000)
 
     # 损失权重（逐步增加冲击权重）
-    lambda_pde = 10.0
-    lambda_ic = 10.0
+    lambda_pde = 1.0
+    lambda_ic = 100.0
 
     history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
 
@@ -120,7 +120,7 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
 
     for epoch in range(epochs):
         # 动态调整冲击权重
-        lambda_jump = 10.0
+        lambda_jump = 1.0
 
         # ===== 配点生成 =====
         # 普通配点
@@ -310,7 +310,7 @@ def plot_results(net, history):
 # ============================================================
 if __name__ == "__main__":
     # 训练
-    net, history = train_improved(epochs=20000, n_coll=800, lr=1e-3)
+    net, history = train_improved(epochs=5000, n_coll=800, lr=1e-3)
 
     # 测试并绘图
     plot_results(net, history)
