@@ -173,7 +173,7 @@ def train_pendulum_fixed(epochs=15000, n_coll=800, lr=1e-3):
                 f"Jump={loss_jump.item():.4e}, θ(t0)={theta_t0.item():.4f} rad"
             )
 
-    return net
+    return net, history
 
 
 # ============================================================
