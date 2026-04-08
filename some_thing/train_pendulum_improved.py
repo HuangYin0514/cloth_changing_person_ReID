@@ -265,7 +265,7 @@ def plot_results(net, history):
 # ============================================================
 if __name__ == "__main__":
     # 训练
-    net, history = train_improved(epochs=5000, n_coll=800, lr=1e-3)
+    net, history = train_pendulum_fixed(epochs=5000, n_coll=800, lr=1e-3)
 
     # 测试并绘图
     plot_results(net, history)
