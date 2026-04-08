@@ -105,7 +105,7 @@ def train_pendulum_fixed(epochs=15000, n_coll=800, lr=1e-3):
 
     lambda_pde = 1.0
     lambda_ic = 10.0
-    lambda_jump = 1.0
+    lambda_jump = 0.01
 
     n_ic_region = 200
     n_normal = 600
@@ -147,7 +147,7 @@ def train_pendulum_fixed(epochs=15000, n_coll=800, lr=1e-3):
         theta_before, theta_dot_before, _ = net.derivatives(t_before)
         theta_after, theta_dot_after, _ = net.derivatives(t_after)
 
-        loss_vel_jump = torch.mean((theta_dot_after + e * theta_dot_before) ** 2) * 0.1
+        loss_vel_jump = torch.mean((theta_dot_after + e * theta_dot_before) ** 2) * 10.0
 
         loss_jump = loss_pos_jump + loss_vel_jump
 
