@@ -96,67 +96,48 @@ def exact_solution(t):
 # ============================================================
 # 训练函数
 # ============================================================
-def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
+def train_pendulum_fixed(epochs=15000, n_coll=800, lr=1e-3):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"\n设备: {device}")
 
     net = ImprovedPendulumNet(hidden_layers=4, neurons=128).to(device)
-    optimizer = torch.optim.Adam(net.parameters(), lr=lr, weight_decay=1e-5)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=2000)
+    optimizer = torch.optim.Adam(net.parameters(), lr=lr)
 
-    # 损失权重（逐步增加冲击权重）
     lambda_pde = 1.0
-    lambda_ic = 1.0
+    lambda_ic = 10.0
+    lambda_jump = 1.0
 
-    history = {"loss": [], "pde": [], "ic": [], "jump": [], "t0_pred": []}
-
-    print("\n训练配置:")
-    print(f"  训练轮数: {epochs}")
-    print(f"  配点数: {n_coll}")
-    print(f"  学习率: {lr}")
-    print("-" * 60)
-
-    start_time = time.time()
+    n_ic_region = 200
+    n_normal = 600
 
     for epoch in range(epochs):
-        # 动态调整冲击权重
-        lambda_jump = 1.0
+        # ===== 配点生成（t=0附近加密）=====
+        t_ic_region = torch.rand(n_ic_region, 1, device=device) * 0.01
+        t_normal = torch.rand(n_normal, 1, device=device) * t_final
+        t = torch.cat([t_ic_region, t_normal], dim=0)
 
-        # ===== 配点生成 =====
-        # 普通配点
-        t_normal = torch.rand(n_coll, 1, device=device) * t_final
-
-        # 冲击点附近加密
-        t_fine = torch.rand(n_coll // 2, 1, device=device) * 0.2 + (t0 - 0.1)
-        t_fine = torch.clamp(t_fine, min=0, max=t_final)
-
-        # 极靠近冲击点的点
-        t_near = torch.rand(200, 1, device=device) * 0.02 + (t0 - 0.01)
-        t_near = torch.clamp(t_near, min=0, max=t_final)
-
-        t = torch.cat([t_normal, t_fine, t_near], dim=0)
+        # ===== IC区域权重 =====
+        weight_ic = torch.ones_like(t)
+        weight_ic[t < 0.01] = 10.0
 
         # ===== 前向计算 =====
         theta, theta_dot, theta_ddot = net.derivatives(t)
 
-        # ===== PDE损失（所有点）=====
+        # ===== PDE损失（加权）=====
         pde = pde_residual(theta, theta_dot, theta_ddot)
-        loss_pde = torch.mean(pde**2)
+        loss_pde = torch.mean(weight_ic * pde**2)
 
         # ===== 初始条件损失 =====
         t_ic = torch.zeros(1, 1, device=device)
         theta_ic, theta_dot_ic, _ = net.derivatives(t_ic)
-        loss_ic_theta = torch.mean((theta_ic - theta0) ** 2)
-        loss_ic_vel = torch.mean(theta_dot_ic**2)
-        loss_ic = loss_ic_theta + loss_ic_vel
+        loss_ic = torch.mean((theta_ic - theta0) ** 2) + torch.mean(theta_dot_ic**2)
 
         # ===== 冲击条件损失 =====
-        # 在t0点强制位置为0
         t0_tensor = torch.tensor([[t0]], device=device)
         theta_t0, theta_dot_t0, _ = net.derivatives(t0_tensor)
+
         loss_pos_jump = torch.mean(theta_t0**2) * 10.0
 
-        # 速度跳变：用前后差分计算
         eps = 1e-4
         t_before = torch.tensor([[t0 - eps]], device=device)
         t_after = torch.tensor([[t0 + eps]], device=device)
@@ -164,19 +145,9 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
         theta_before, theta_dot_before, _ = net.derivatives(t_before)
         theta_after, theta_dot_after, _ = net.derivatives(t_after)
 
-        # 速度跳变条件：θ̇_after = -e * θ̇_before
         loss_vel_jump = torch.mean((theta_dot_after + e * theta_dot_before) ** 2) * 10.0
 
-        # 在冲击点附近强制连续性
-        t_left_near = torch.linspace(t0 - 0.02, t0, 50, device=device).reshape(-1, 1)
-        t_right_near = torch.linspace(t0, t0 + 0.02, 50, device=device).reshape(-1, 1)
-
-        theta_left_near, _, _ = net.derivatives(t_left_near)
-        theta_right_near, _, _ = net.derivatives(t_right_near)
-
-        loss_continuity = torch.mean((theta_left_near[-1] - theta_right_near[0]) ** 2) * 100.0
-
-        loss_jump = loss_pos_jump + loss_vel_jump + loss_continuity
+        loss_jump = loss_pos_jump + loss_vel_jump
 
         # ===== 总损失 =====
         loss_total = lambda_pde * loss_pde + lambda_ic * loss_ic + lambda_jump * loss_jump
@@ -186,31 +157,15 @@ def train_improved(epochs=20000, n_coll=1000, lr=1e-3, verbose=True):
         loss_total.backward()
         torch.nn.utils.clip_grad_norm_(net.parameters(), 1.0)
         optimizer.step()
-        scheduler.step(loss_total)
 
-        # ===== 记录 =====
-        history["loss"].append(loss_total.item())
-        history["pde"].append(loss_pde.item())
-        history["ic"].append(loss_ic.item())
-        history["jump"].append(loss_jump.item())
-        history["t0_pred"].append(theta_t0.item())
-
-        if verbose and (epoch + 1) % 1000 == 0:
+        if (epoch + 1) % 1000 == 0:
             print(
                 f"Epoch {epoch+1:6d}: Loss={loss_total.item():.4e}, "
                 f"PDE={loss_pde.item():.4e}, IC={loss_ic.item():.4e}, "
                 f"Jump={loss_jump.item():.4e}, θ(t0)={theta_t0.item():.4f} rad"
             )
 
-    elapsed = time.time() - start_time
-    print(f"\n训练完成，用时 {elapsed:.2f} 秒")
-
-    # 保存模型
-    torch.save(net.state_dict(), "pendulum_improved.pth")
-    np.save("pendulum_improved_history.npy", history)
-    print("模型已保存: pendulum_improved.pth")
-
-    return net, history
+    return net
 
 
 # ============================================================
