@@ -712,7 +712,7 @@ def main():
 
     # 5. 生成完整数据集
     print("\n[5] 生成完整数据集...")
-    dataset = generator.generate_dataset(n_trajectories=3, t_span=(0, 5), tau_type="free", save_path="flexible_manipulator_dataset.pkl")  # 测试用，实际可设为800
+    dataset = generator.generate_dataset(n_trajectories=10, t_span=(0, 5), tau_type="free", save_path="flexible_manipulator_dataset.pkl")  # 测试用，实际可设为800
 
     # 6. 数据格式转换示例
     print("\n[6] 数据格式转换示例...")
