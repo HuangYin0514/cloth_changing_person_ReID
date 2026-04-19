@@ -1,304 +1,438 @@
 """
-MDANN训练代码 - 适配柔性机械臂数据
-基于之前生成的数据格式
+柔性机械臂训练数据生成器
+基于悬臂梁假设模态法的动力学仿真
+输出：可用于MDANN/HNN/LNN训练的轨迹数据
 """
 
 import os
 import pickle
 
-import matplotlib.pyplot as plt
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader, Dataset
+from scipy.integrate import solve_ivp
+from scipy.special import roots_legendre
 
-# ========================== 1. 数据集类 ==========================
+# ========================== 1. 系统参数 ==========================
 
 
-class FlexArmDataset(Dataset):
-    """柔性机械臂数据集"""
+class FlexArmParams:
+    """柔性机械臂系统参数"""
 
-    def __init__(self, data_path, seq_len=50, normalize=True):
+    def __init__(self):
+        # 几何参数
+        self.L = 1.0
+        self.A = 0.0001
+        self.I = (0.01**4) / 12
+
+        # 材料参数
+        self.rho = 2700
+        self.E = 70e9
+
+        # 运动参数
+        self.g = 9.81
+        self.J_h = 0.1
+        self.b = 0.01
+
+        # 模态参数
+        self.n_modes = 2
+        self._compute_mode_shapes()
+        self._setup_quadrature()
+        self._compute_constant_matrices()
+
+    def _compute_mode_shapes(self):
+        """计算悬臂梁模态参数"""
+        betaL = np.array([1.87510407, 4.69409113])
+        self.beta = betaL / self.L
+        self.sigma = (np.sinh(betaL) + np.sin(betaL)) / (np.cosh(betaL) + np.cos(betaL))
+
+    def _setup_quadrature(self):
+        """设置高斯-勒让德积分"""
+        n_quad = 10
+        xi, w = roots_legendre(n_quad)
+        self.x_quad = (self.L / 2) * (xi + 1)
+        self.w_quad = (self.L / 2) * w
+
+    def phi(self, x, i):
+        """第i阶振型函数"""
+        b = self.beta[i]
+        s = self.sigma[i]
+        return np.cosh(b * x) - np.cos(b * x) - s * (np.sinh(b * x) - np.sin(b * x))
+
+    def d2phi(self, x, i):
+        """振型函数二阶导数"""
+        b = self.beta[i]
+        s = self.sigma[i]
+        return (b**2) * (np.cosh(b * x) + np.cos(b * x) - s * (np.sinh(b * x) + np.sin(b * x)))
+
+    def _compute_constant_matrices(self):
+        """计算常数矩阵 Mf, Kf"""
+        self.Mf = np.zeros((self.n_modes, self.n_modes))
+        self.Kf = np.zeros((self.n_modes, self.n_modes))
+
+        for i in range(self.n_modes):
+            for j in range(self.n_modes):
+                phi_i = self.phi(self.x_quad, i)
+                phi_j = self.phi(self.x_quad, j)
+                self.Mf[i, j] = np.dot(self.w_quad, self.rho * self.A * phi_i * phi_j)
+
+                d2phi_i = self.d2phi(self.x_quad, i)
+                d2phi_j = self.d2phi(self.x_quad, j)
+                self.Kf[i, j] = np.dot(self.w_quad, self.E * self.I * d2phi_i * d2phi_j)
+
+
+# ========================== 2. 动力学系统 ==========================
+
+
+class FlexArmDynamics:
+    """柔性机械臂动力学系统"""
+
+    def __init__(self, params):
+        self.p = params
+
+    def dynamics(self, t, state, torque_func):
         """
-        参数:
-            data_path: 数据文件路径 (.pkl)
-            seq_len: 序列长度（时间步数）
-            normalize: 是否归一化
+        动力学方程
+        state = [θ, θ̇, w₁, w₂, ẇ₁, ẇ₂]
         """
-        with open(data_path, "rb") as f:
-            self.data = pickle.load(f)
+        p = self.p
 
-        self.trajectories = self.data["trajectories"]
-        self.seq_len = seq_len
-        self.normalize = normalize
+        theta = state[0]
+        dtheta = state[1]
+        q = state[2 : 2 + p.n_modes]
+        dq = state[2 + p.n_modes :]
 
-        # 计算归一化参数（如果需要）
-        if normalize:
-            self._compute_normalization_params()
+        x = p.x_quad
+        w = p.w_quad
+        phi_mat = np.array([p.phi(x, k) for k in range(p.n_modes)])
 
-    def _compute_normalization_params(self):
-        """计算所有轨迹的归一化参数"""
-        all_theta = []
-        all_theta_dot = []
-        all_q = []
-        all_q_dot = []
-        all_theta_ddot = []
-        all_q_ddot = []
+        # 计算变形场
+        delta = q @ phi_mat
 
-        for traj in self.trajectories:
-            all_theta.append(traj["theta"])
-            all_theta_dot.append(traj["theta_dot"])
-            all_q.append(traj["q"])
-            all_q_dot.append(traj["q_dot"])
-            all_theta_ddot.append(traj["theta_ddot"])
-            all_q_ddot.append(traj["q_ddot"])
+        # 刚体惯量（含柔性耦合）
+        Mr = p.J_h + p.rho * p.A * np.dot(w, x**2)
 
-        all_theta = np.concatenate(all_theta)
-        all_theta_dot = np.concatenate(all_theta_dot)
-        all_q = np.concatenate(all_q)
-        all_q_dot = np.concatenate(all_q_dot)
-        all_theta_ddot = np.concatenate(all_theta_ddot)
-        all_q_ddot = np.concatenate(all_q_ddot)
+        # 刚-柔耦合向量
+        M_couple = np.array([p.rho * p.A * np.dot(w, x * p.phi(x, k)) for k in range(p.n_modes)])
 
-        self.theta_mean = np.mean(all_theta)
-        self.theta_std = np.std(all_theta) + 1e-8
-        self.theta_dot_mean = np.mean(all_theta_dot)
-        self.theta_dot_std = np.std(all_theta_dot) + 1e-8
-        self.q_mean = np.mean(all_q, axis=0)
-        self.q_std = np.std(all_q, axis=0) + 1e-8
-        self.q_dot_mean = np.mean(all_q_dot, axis=0)
-        self.q_dot_std = np.std(all_q_dot, axis=0) + 1e-8
-        self.theta_ddot_mean = np.mean(all_theta_ddot)
-        self.theta_ddot_std = np.std(all_theta_ddot) + 1e-8
-        self.q_ddot_mean = np.mean(all_q_ddot, axis=0)
-        self.q_ddot_std = np.std(all_q_ddot, axis=0) + 1e-8
+        # 装配质量矩阵
+        M = np.eye(1 + p.n_modes)
+        M[0, 0] = Mr
+        M[0, 1:] = M_couple
+        M[1:, 0] = M_couple
+        M[1:, 1:] = p.Mf
 
-    def __len__(self):
-        # 每条轨迹可以切分成多个序列
-        total = 0
-        for traj in self.trajectories:
-            total += max(0, len(traj["t"]) - self.seq_len)
-        return total
+        # 装配力向量
+        F = np.zeros(1 + p.n_modes)
 
-    def __getitem__(self, idx):
-        # 找到对应的轨迹和起始位置
-        for traj in self.trajectories:
-            n_points = len(traj["t"])
-            if idx < n_points - self.seq_len:
-                start = idx
-                # 提取序列
-                theta = traj["theta"][start : start + self.seq_len]
-                theta_dot = traj["theta_dot"][start : start + self.seq_len]
-                q = traj["q"][start : start + self.seq_len]
-                q_dot = traj["q_dot"][start : start + self.seq_len]
-                theta_ddot = traj["theta_ddot"][start : start + self.seq_len]
-                q_ddot = traj["q_ddot"][start : start + self.seq_len]
-                break
-            else:
-                idx -= n_points - self.seq_len
+        # 重力力矩
+        delta_com = np.dot(w, delta) / p.L
+        F[0] -= p.rho * p.A * p.L * p.g * (p.L / 2 + delta_com) * np.sin(theta)
 
-        # 构建输入：慢变量 [θ, θ̇, q₁, q₂]
-        X = np.column_stack([theta, theta_dot, q])
+        # 弹性力
+        F[1:] -= p.Kf @ q
 
-        # 构建输出：慢变量加速度 [θ̈, q̈₁, q̈₂]
-        Y = np.column_stack([theta_ddot, q_ddot])
+        # 阻尼力
+        F[0] -= p.b * dtheta
 
-        # 归一化
-        if self.normalize:
-            X[:, 0] = (X[:, 0] - self.theta_mean) / self.theta_std
-            X[:, 1] = (X[:, 1] - self.theta_dot_mean) / self.theta_dot_std
-            X[:, 2:] = (X[:, 2:] - self.q_mean) / self.q_std
-            Y[:, 0] = (Y[:, 0] - self.theta_ddot_mean) / self.theta_ddot_std
-            Y[:, 1:] = (Y[:, 1:] - self.q_ddot_mean) / self.q_ddot_std
+        # 离心力
+        for i in range(p.n_modes):
+            b_val = p.beta[i]
+            s = p.sigma[i]
+            dphi = b_val * (np.sinh(b_val * x) - np.sin(b_val * x) - s * (np.cosh(b_val * x) - np.cos(b_val * x)))
+            cent = np.dot(w, p.rho * p.A * dphi * x**2 * dtheta**2)
+            F[1 + i] += 0.5 * cent
 
-        return torch.FloatTensor(X), torch.FloatTensor(Y)
+        # 外力矩
+        F[0] += torque_func(t)
+
+        # 求解加速度
+        accel = np.linalg.solve(M, F)
+
+        # 状态导数
+        dstate = np.zeros(2 + 2 * p.n_modes)
+        dstate[0] = dtheta
+        dstate[1] = accel[0]
+        dstate[2 : 2 + p.n_modes] = dq
+        dstate[2 + p.n_modes :] = accel[1:]
+
+        return dstate
 
 
-# ========================== 2. MDANN模型 ==========================
+# ========================== 3. 单条轨迹生成 ==========================
 
 
-class MDANN(nn.Module):
-    """多尺度微分-代数神经网络"""
+def generate_single_trajectory(params, init_theta_deg=0.0, init_q=None, torque_type="free", t_span=(0, 20), dt=0.05, noise_level=0.0):
+    """
+    生成单条轨迹
 
-    def __init__(self, input_dim, hidden_dim=128, num_layers=3):
-        super().__init__()
+    参数:
+        params: 系统参数
+        init_theta_deg: 初始角度（度）
+        init_q: 初始柔性模态位移
+        torque_type: 力矩类型 ('free', 'const', 'sin')
+        t_span: 时间区间 (start, end)
+        dt: 采样间隔
+        noise_level: 噪声水平
 
-        layers = []
-        layers.append(nn.Linear(input_dim, hidden_dim))
-        layers.append(nn.Tanh())
+    返回:
+        轨迹数据字典
+    """
+    dynamics = FlexArmDynamics(params)
 
-        for _ in range(num_layers - 1):
-            layers.append(nn.Linear(hidden_dim, hidden_dim))
-            layers.append(nn.Tanh())
+    # 初始状态
+    y0 = np.zeros(2 + 2 * params.n_modes)
+    y0[0] = np.deg2rad(init_theta_deg)
 
-        layers.append(nn.Linear(hidden_dim, input_dim))
+    if init_q is None:
+        init_q = np.array([0.001, 0.0005])
+    y0[2 : 2 + params.n_modes] = init_q
 
-        self.net = nn.Sequential(*layers)
+    # 力矩函数
+    if torque_type == "free":
+        torque = lambda t: 0.0
+    elif torque_type == "const":
+        torque = lambda t: 2.0
+    elif torque_type == "sin":
+        torque = lambda t: 1.5 * np.sin(np.pi * t)
+    else:
+        torque = lambda t: 0.0
 
-    def forward(self, x):
-        """
-        输入: x = [θ, θ̇, q₁, q₂]
-        输出: y = [θ̈, q̈₁, q̈₂]
-        """
-        return self.net(x)
+    # 时间点
+    t_eval = np.arange(t_span[0], t_span[1], dt)
 
+    # 求解ODE
+    sol = solve_ivp(lambda t, y: dynamics.dynamics(t, y, torque), t_span, y0, t_eval=t_eval, method="RK45", rtol=1e-6, atol=1e-8)
 
-# ========================== 3. 训练函数 ==========================
+    t = sol.t
+    y = sol.y
 
+    # 提取数据
+    theta = y[0]  # 关节角度 (rad)
+    theta_dot = y[1]  # 关节角速度 (rad/s)
+    q = y[2 : 2 + params.n_modes].T  # 柔性模态位移
+    q_dot = y[2 + params.n_modes :].T  # 柔性模态速度
 
-def train_model(model, train_loader, val_loader, epochs=100, lr=1e-3, device="cpu"):
-    """训练模型"""
-    model = model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=10, factor=0.5)
-    criterion = nn.MSELoss()
+    # 计算加速度（数值微分）
+    dt_actual = t[1] - t[0]
+    theta_ddot = np.gradient(theta_dot, dt_actual)
+    q_ddot = np.gradient(q_dot, dt_actual, axis=0)
 
-    train_losses = []
-    val_losses = []
+    # 计算动能
+    KE_rigid = 0.5 * params.J_h * theta_dot**2
 
-    for epoch in range(epochs):
-        # 训练
-        model.train()
-        train_loss = 0.0
-        for X, Y in train_loader:
-            X, Y = X.to(device), Y.to(device)
+    # 计算势能
+    PE_elastic = 0.5 * np.sum(q * (params.Kf @ q.T).T, axis=1)
 
-            optimizer.zero_grad()
-            Y_pred = model(X)
-            loss = criterion(Y_pred, Y)
-            loss.backward()
-            optimizer.step()
+    # 总能量
+    energy = KE_rigid + PE_elastic
 
-            train_loss += loss.item()
+    # 添加噪声
+    if noise_level > 0:
+        theta += np.random.normal(0, noise_level, len(theta))
+        theta_dot += np.random.normal(0, noise_level, len(theta_dot))
+        q += np.random.normal(0, noise_level, q.shape)
+        q_dot += np.random.normal(0, noise_level, q_dot.shape)
+        energy += np.random.normal(0, noise_level, len(energy))
 
-        train_loss /= len(train_loader)
-        train_losses.append(train_loss)
-
-        # 验证
-        model.eval()
-        val_loss = 0.0
-        with torch.no_grad():
-            for X, Y in val_loader:
-                X, Y = X.to(device), Y.to(device)
-                Y_pred = model(X)
-                loss = criterion(Y_pred, Y)
-                val_loss += loss.item()
-
-        val_loss /= len(val_loader)
-        val_losses.append(val_loss)
-        scheduler.step(val_loss)
-
-        if (epoch + 1) % 20 == 0:
-            print(f"Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.6f}, Val Loss: {val_loss:.6f}")
-
-    return train_losses, val_losses
-
-
-# ========================== 4. 预测函数 ==========================
+    # 返回轨迹
+    return {
+        "t": t,
+        "theta": theta,
+        "theta_dot": theta_dot,
+        "theta_ddot": theta_ddot,
+        "q": q,
+        "q_dot": q_dot,
+        "q_ddot": q_ddot,
+        "energy": energy,
+        "params": {"init_theta_deg": init_theta_deg, "torque_type": torque_type, "noise_level": noise_level},
+    }
 
 
-def predict_trajectory(model, dataset, traj_idx=0, start_idx=0, n_steps=200, device="cpu"):
-    """预测轨迹（自回归）"""
-    model.eval()
+# ========================== 4. 批量数据生成 ==========================
 
-    traj = dataset.trajectories[traj_idx]
-    n_points = len(traj["t"])
 
-    if start_idx + n_steps > n_points:
-        n_steps = n_points - start_idx - 1
+def generate_dataset(params, n_trajectories=800, t_span=(0, 2), dt=0.05, torque_type="free", init_theta_range=(-45, 45), noise_level=0.0, save_path=None):
+    """
+    生成完整数据集
 
-    # 获取初始状态
-    theta0 = traj["theta"][start_idx]
-    theta_dot0 = traj["theta_dot"][start_idx]
-    q0 = traj["q"][start_idx]
+    参数:
+        params: 系统参数
+        n_trajectories: 轨迹数量
+        t_span: 时间区间
+        dt: 采样间隔
+        torque_type: 力矩类型
+        init_theta_range: 初始角度范围（度）
+        noise_level: 噪声水平
+        save_path: 保存路径
+    """
+    trajectories = []
+
+    print(f"生成 {n_trajectories} 条轨迹 (力矩类型: {torque_type})...")
+
+    for i in range(n_trajectories):
+        # 随机初始条件
+        init_theta = np.random.uniform(init_theta_range[0], init_theta_range[1])
+        init_q = np.random.uniform(-0.01, 0.01, params.n_modes)
+
+        # 生成轨迹
+        traj = generate_single_trajectory(params, init_theta, init_q, torque_type, t_span, dt, noise_level)
+        trajectories.append(traj)
+
+        if (i + 1) % 100 == 0:
+            print(f"  已生成 {i+1}/{n_trajectories} 条轨迹")
+
+    # 计算统计信息
+    all_theta = np.concatenate([t["theta"] for t in trajectories])
+    all_theta_dot = np.concatenate([t["theta_dot"] for t in trajectories])
+    all_q = np.concatenate([t["q"] for t in trajectories])
+
+    stats = {
+        "theta_mean": np.mean(all_theta),
+        "theta_std": np.std(all_theta),
+        "theta_dot_mean": np.mean(all_theta_dot),
+        "theta_dot_std": np.std(all_theta_dot),
+        "q_mean": np.mean(all_q),
+        "q_std": np.std(all_q),
+    }
+
+    dataset = {
+        "trajectories": trajectories,
+        "stats": stats,
+        "params": {
+            "n_trajectories": n_trajectories,
+            "t_span": t_span,
+            "dt": dt,
+            "torque_type": torque_type,
+            "noise_level": noise_level,
+            "system": {"L": params.L, "n_modes": params.n_modes, "J_h": params.J_h, "damping": params.b},
+        },
+    }
+
+    if save_path:
+        with open(save_path, "wb") as f:
+            pickle.dump(dataset, f)
+        print(f"数据集已保存: {save_path}")
+
+    return dataset
+
+
+# ========================== 5. 数据格式转换 ==========================
+
+
+def convert_to_mdann_format(traj, stats=None):
+    """
+    转换为MDANN格式
+
+    MDANN输入: 慢变量 [θ, θ̇, q₁, q₂]
+    MDANN输出: 慢变量加速度 [θ̈, q̈₁, q̈₂]
+    """
+    m = traj["q"].shape[1]
+
+    # 输入
+    X = np.column_stack([traj["theta"], traj["theta_dot"], traj["q"]])
+
+    # 输出
+    Y = np.column_stack([traj["theta_ddot"], traj["q_ddot"]])
 
     # 归一化
-    if dataset.normalize:
-        theta0 = (theta0 - dataset.theta_mean) / dataset.theta_std
-        theta_dot0 = (theta_dot0 - dataset.theta_dot_mean) / dataset.theta_dot_std
-        q0 = (q0 - dataset.q_mean) / dataset.q_std
+    if stats is not None:
+        X = (X - stats["X_mean"]) / stats["X_std"]
+        Y = (Y - stats["Y_mean"]) / stats["Y_std"]
 
-    # 当前状态
+    return X, Y
+
+
+def convert_to_hnn_format(traj, params, stats=None):
+    """
+    转换为HNN格式
+
+    HNN输入: [θ, p_θ, q₁, p_q1, q₂, p_q2]
+    HNN输出: [θ̇, ṗ_θ, q̇₁, ṗ_q1, q̇₂, ṗ_q2]
+    """
+    m = traj["q"].shape[1]
+
+    # 计算动量
+    p_theta = params.J_h * traj["theta_dot"]
+    p_q = params.Mf @ traj["q_dot"].T
+    p_q = p_q.T
+
+    # 输入
+    X = np.column_stack([traj["theta"], p_theta, traj["q"], p_q])
+
+    # 输出
     dt = traj["t"][1] - traj["t"][0]
-    state = np.array([theta0, theta_dot0] + list(q0))
+    p_theta_dot = np.gradient(p_theta, dt)
+    p_q_dot = np.gradient(p_q, dt, axis=0)
 
-    # 预测轨迹
-    pred_states = [state.copy()]
-    pred_times = [0]
+    Y = np.column_stack([traj["theta_dot"], p_theta_dot, traj["q_dot"], p_q_dot])
 
-    for step in range(n_steps):
-        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(device)
-        acc = model(state_tensor).cpu().detach().numpy()[0]
+    if stats is not None:
+        X = (X - stats["X_mean"]) / stats["X_std"]
+        Y = (Y - stats["Y_mean"]) / stats["Y_std"]
 
-        # 欧拉积分
-        state[0] += state[1] * dt
-        state[1] += acc[0] * dt
-        state[2:] += acc[1:] * dt
-
-        pred_states.append(state.copy())
-        pred_times.append((step + 1) * dt)
-
-    # 反归一化
-    if dataset.normalize:
-        for i, s in enumerate(pred_states):
-            s[0] = s[0] * dataset.theta_std + dataset.theta_mean
-            s[1] = s[1] * dataset.theta_dot_std + dataset.theta_dot_mean
-            s[2:] = s[2:] * dataset.q_std + dataset.q_mean
-
-    pred_states = np.array(pred_states)
-
-    return pred_times, pred_states
+    return X, Y
 
 
-# ========================== 5. 可视化 ==========================
+def convert_to_lnn_format(traj, stats=None):
+    """
+    转换为LNN格式
+
+    LNN输入: [θ, θ̇, q₁, q̇₁, q₂, q̇₂]
+    LNN输出: [θ̈, q̈₁, q̈₂]
+    """
+    m = traj["q"].shape[1]
+
+    # 输入
+    X = np.column_stack([traj["theta"], traj["theta_dot"], traj["q"], traj["q_dot"]])
+
+    # 输出
+    Y = np.column_stack([traj["theta_ddot"], traj["q_ddot"]])
+
+    if stats is not None:
+        X = (X - stats["X_mean"]) / stats["X_std"]
+        Y = (Y - stats["Y_mean"]) / stats["Y_std"]
+
+    return X, Y
 
 
-def plot_prediction(traj, pred_times, pred_states, start_idx=0, save_path=None):
-    """绘制预测结果对比"""
-    n_points = len(traj["t"])
-    t_true = traj["t"][start_idx : start_idx + len(pred_times)]
+# ========================== 6. 可视化 ==========================
 
-    # 截取真实轨迹对应部分
-    theta_true = traj["theta"][start_idx : start_idx + len(pred_times)]
-    q_true = traj["q"][start_idx : start_idx + len(pred_times)]
+
+def plot_trajectory(traj, save_path=None):
+    """可视化单条轨迹"""
+    import matplotlib.pyplot as plt
 
     fig, axes = plt.subplots(2, 2, figsize=(12, 8))
 
+    t = traj["t"]
+
     # 关节角度
-    axes[0, 0].plot(t_true, np.rad2deg(theta_true), "b-", label="True", linewidth=2)
-    axes[0, 0].plot(pred_times, np.rad2deg(pred_states[:, 0]), "r--", label="Predicted", linewidth=2)
+    axes[0, 0].plot(t, np.rad2deg(traj["theta"]), "b-", linewidth=2)
     axes[0, 0].set_xlabel("Time (s)")
     axes[0, 0].set_ylabel("Angle (deg)")
     axes[0, 0].set_title("Joint Angle")
-    axes[0, 0].legend()
     axes[0, 0].grid(True)
 
     # 关节角速度
-    axes[0, 1].plot(t_true, traj["theta_dot"][start_idx : start_idx + len(pred_times)], "b-", label="True", linewidth=2)
-    axes[0, 1].plot(pred_times, pred_states[:, 1], "r--", label="Predicted", linewidth=2)
+    axes[0, 1].plot(t, traj["theta_dot"], "r-", linewidth=2)
     axes[0, 1].set_xlabel("Time (s)")
     axes[0, 1].set_ylabel("Angular Velocity (rad/s)")
     axes[0, 1].set_title("Joint Angular Velocity")
-    axes[0, 1].legend()
     axes[0, 1].grid(True)
 
     # 柔性模态
     for i in range(traj["q"].shape[1]):
-        axes[1, 0].plot(t_true, q_true[:, i], "b-", label=f"q{i+1} true", linewidth=2)
-        axes[1, 0].plot(pred_times, pred_states[:, 2 + i], "r--", label=f"q{i+1} pred", linewidth=2)
+        axes[1, 0].plot(t, traj["q"][:, i], label=f"q_{i+1}", linewidth=2)
     axes[1, 0].set_xlabel("Time (s)")
     axes[1, 0].set_ylabel("Modal Displacement")
     axes[1, 0].set_title("Flexible Modes")
     axes[1, 0].legend()
     axes[1, 0].grid(True)
 
-    # 误差
-    theta_error = np.rad2deg(theta_true - pred_states[:, 0])
-    axes[1, 1].plot(pred_times, theta_error, "r-", linewidth=2)
+    # 能量
+    axes[1, 1].plot(t, traj["energy"], "g-", linewidth=2)
     axes[1, 1].set_xlabel("Time (s)")
-    axes[1, 1].set_ylabel("Angle Error (deg)")
-    axes[1, 1].set_title("Prediction Error")
+    axes[1, 1].set_ylabel("Energy (J)")
+    axes[1, 1].set_title("Total Energy")
     axes[1, 1].grid(True)
 
     plt.tight_layout()
@@ -310,74 +444,56 @@ def plot_prediction(traj, pred_times, pred_states, start_idx=0, save_path=None):
     plt.show()
 
 
-# ========================== 6. 主程序 ==========================
+# ========================== 7. 主程序 ==========================
 
 
 def main():
+    """生成训练、验证、测试数据集"""
+
     print("=" * 60)
-    print("MDANN训练 - 柔性机械臂")
+    print("柔性机械臂训练数据生成器")
     print("=" * 60)
 
-    # 检查数据文件
-    data_dir = "data"
-    if not os.path.exists(f"{data_dir}/flex_train.pkl"):
-        print("错误: 未找到训练数据，请先运行数据生成代码")
-        print("运行: python generate_training_data.py")
-        return
+    # 初始化系统
+    params = FlexArmParams()
+    print(f"\n系统参数:")
+    print(f"  臂长: {params.L} m")
+    print(f"  模态阶数: {params.n_modes}")
+    print(f"  hub惯量: {params.J_h} kg·m²")
 
-    # 加载数据集
-    print("\n[1/4] 加载数据集...")
-    train_dataset = FlexArmDataset(f"{data_dir}/flex_train.pkl", seq_len=1, normalize=True)
-    val_dataset = FlexArmDataset(f"{data_dir}/flex_val.pkl", seq_len=1, normalize=True)
+    # 创建数据目录
+    os.makedirs("data", exist_ok=True)
 
-    train_loader = DataLoader(train_dataset, batch_size=64, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=64, shuffle=False)
+    # 生成训练集（自由摆动）
+    print("\n[1/3] 生成训练集...")
+    train_data = generate_dataset(params, n_trajectories=3, torque_type="free", init_theta_range=(-60, 60), save_path="data/flex_train.pkl")
 
-    print(f"  训练集样本数: {len(train_dataset)}")
-    print(f"  验证集样本数: {len(val_dataset)}")
+    # 生成验证集（自由摆动，不同初始条件）
+    print("\n[2/3] 生成验证集...")
+    val_data = generate_dataset(params, n_trajectories=2, torque_type="free", init_theta_range=(-60, 60), save_path="data/flex_val.pkl")
 
-    # 创建模型
-    print("\n[2/4] 创建MDANN模型...")
-    input_dim = 2 + train_dataset.data["params"]["system"]["n_modes"]
-    model = MDANN(input_dim, hidden_dim=128, num_layers=3)
+    # 生成测试集（恒定力矩）
+    print("\n[3/3] 生成测试集...")
+    test_data = generate_dataset(params, n_trajectories=2, torque_type="const", init_theta_range=(-30, 30), save_path="data/flex_test.pkl")
 
-    n_params = sum(p.numel() for p in model.parameters())
-    print(f"  输入维度: {input_dim}")
-    print(f"  参数量: {n_params:,}")
+    # 可视化示例轨迹
+    print("\n[4/4] 可视化示例轨迹...")
+    plot_trajectory(train_data["trajectories"][0], save_path="data/sample_trajectory.png")
 
-    # 训练
-    print("\n[3/4] 训练模型...")
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    train_losses, val_losses = train_model(model, train_loader, val_loader, epochs=200, lr=1e-3, device=device)
-
-    # 绘制训练曲线
-    plt.figure(figsize=(10, 5))
-    plt.plot(train_losses, label="Train Loss")
-    plt.plot(val_losses, label="Val Loss")
-    plt.xlabel("Epoch")
-    plt.ylabel("Loss")
-    plt.title("Training History")
-    plt.legend()
-    plt.grid(True)
-    plt.savefig(f"{data_dir}/training_history.png", dpi=150)
-    plt.show()
-
-    # 预测测试
-    print("\n[4/4] 测试预测...")
-    test_dataset = FlexArmDataset(f"{data_dir}/flex_test.pkl", seq_len=1, normalize=True)
-
-    # 取一条测试轨迹进行预测
-    pred_times, pred_states = predict_trajectory(model, test_dataset, traj_idx=0, start_idx=0, n_steps=300, device=device)
-
-    # 可视化
-    plot_prediction(test_dataset.trajectories[0], pred_times, pred_states, start_idx=0, save_path=f"{data_dir}/mdann_prediction.png")
-
-    # 保存模型
-    torch.save(model.state_dict(), f"{data_dir}/mdann_model.pth")
-    print(f"\n模型已保存: {data_dir}/mdann_model.pth")
+    # 打印统计信息
+    print(f"\n数据集统计:")
+    print(f"  训练集: {len(train_data['trajectories'])} 条轨迹")
+    print(f"  验证集: {len(val_data['trajectories'])} 条轨迹")
+    print(f"  测试集: {len(test_data['trajectories'])} 条轨迹")
+    print(f"  每条轨迹时间点数: {len(train_data['trajectories'][0]['t'])}")
 
     print("\n" + "=" * 60)
-    print("训练完成！")
+    print("数据生成完成！")
+    print("生成的文件:")
+    print("  - data/flex_train.pkl")
+    print("  - data/flex_val.pkl")
+    print("  - data/flex_test.pkl")
+    print("  - data/sample_trajectory.png")
     print("=" * 60)
 
 
