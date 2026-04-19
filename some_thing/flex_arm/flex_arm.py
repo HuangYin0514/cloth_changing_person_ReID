@@ -466,15 +466,15 @@ def main():
 
     # 生成训练集（自由摆动）
     print("\n[1/3] 生成训练集...")
-    train_data = generate_dataset(params, n_trajectories=800, torque_type="free", init_theta_range=(-60, 60), save_path="data/flex_train.pkl")
+    train_data = generate_dataset(params, n_trajectories=8, torque_type="free", init_theta_range=(-60, 60), save_path="data/flex_train.pkl")
 
     # 生成验证集（自由摆动，不同初始条件）
     print("\n[2/3] 生成验证集...")
-    val_data = generate_dataset(params, n_trajectories=100, torque_type="free", init_theta_range=(-60, 60), save_path="data/flex_val.pkl")
+    val_data = generate_dataset(params, n_trajectories=1, torque_type="free", init_theta_range=(-60, 60), save_path="data/flex_val.pkl")
 
     # 生成测试集（恒定力矩）
     print("\n[3/3] 生成测试集...")
-    test_data = generate_dataset(params, n_trajectories=100, torque_type="const", init_theta_range=(-30, 30), save_path="data/flex_test.pkl")
+    test_data = generate_dataset(params, n_trajectories=1, torque_type="const", init_theta_range=(-30, 30), save_path="data/flex_test.pkl")
 
     # 可视化示例轨迹
     print("\n[4/4] 可视化示例轨迹...")
