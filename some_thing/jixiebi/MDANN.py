@@ -680,7 +680,7 @@ def main():
     # 3. 训练
     print("\n[3] 开始训练...")
     trainer = MDANNTrainer(model, learning_rate=1e-3)
-    train_losses, val_losses = trainer.train(train_loader, val_loader, n_epochs=3, early_stop_patience=20)
+    train_losses, val_losses = trainer.train(train_loader, val_loader, n_epochs=100, early_stop_patience=20)
 
     # 4. 绘制训练曲线
     plt.figure(figsize=(10, 5))
