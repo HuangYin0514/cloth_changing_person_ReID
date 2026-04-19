@@ -132,7 +132,7 @@ class MDANN(nn.Module):
             layers.append(nn.Linear(hidden_dim, hidden_dim))
             layers.append(nn.Tanh())
 
-        layers.append(nn.Linear(hidden_dim, input_dim))
+        layers.append(nn.Linear(hidden_dim, 3))
 
         self.net = nn.Sequential(*layers)
 
@@ -348,7 +348,7 @@ def main():
     # 训练
     print("\n[3/4] 训练模型...")
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    train_losses, val_losses = train_model(model, train_loader, val_loader, epochs=2, lr=1e-3, device=device)
+    train_losses, val_losses = train_model(model, train_loader, val_loader, epochs=200, lr=1e-3, device=device)
 
     # 绘制训练曲线
     plt.figure(figsize=(10, 5))
