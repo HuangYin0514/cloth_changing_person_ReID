@@ -680,7 +680,7 @@ def main():
     # 3. 训练
     print("\n[3] 开始训练...")
     trainer = MDANNTrainer(model, learning_rate=1e-3)
-    train_losses, val_losses = trainer.train(train_loader, val_loader, n_epochs=100, early_stop_patience=20)
+    train_losses, val_losses = trainer.train(train_loader, val_loader, n_epochs=3, early_stop_patience=20)
 
     # 4. 绘制训练曲线
     plt.figure(figsize=(10, 5))
@@ -702,7 +702,7 @@ def main():
     test_sample = test_dataset[0]
     y0, z0, y_target, z_target = test_sample
 
-    y_pred, z_pred = evaluator.predict(y0.numpy(), z0.numpy(), len(y_target))
+    y_pred, z_pred = evaluator.predict(y0.numpy(), z0.numpy(), len(y_target) - 1)
 
     # 计算指标
     metrics = evaluator.compute_metrics(y_pred, y_target.numpy(), z_pred, z_target.numpy())
