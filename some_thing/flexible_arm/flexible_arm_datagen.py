@@ -694,10 +694,10 @@ def build_full_dataset(dataset, fmt="mdann", normalize=True, **kwargs):
 
 if __name__ == "__main__":
 
-    TRAIN_SIZE = 10
-    VAL_SIZE = 8
-    TEST_SIZE = 8
-    T_END = 2.0  # 每条轨迹时长 [s]
+    TRAIN_SIZE = 300
+    VAL_SIZE = 80
+    TEST_SIZE = 80
+    T_END = 5.0  # 每条轨迹时长 [s]
     N_PTS = 500  # 每条轨迹时间点数（dt ≈ 0.01s）
     NOISE = 0.001  # 传感器噪声水平
 

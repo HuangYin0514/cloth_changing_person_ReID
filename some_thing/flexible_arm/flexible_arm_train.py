@@ -385,7 +385,7 @@ def train_model(
     """
     model = model.to(DEVICE)
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=lr_patience, factor=lr_factor, verbose=False)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode="min", patience=lr_patience, factor=lr_factor)
     criterion = nn.MSELoss()
 
     tr_loader = make_loader(train_X, train_Y, batch_size, shuffle=True)
@@ -419,10 +419,9 @@ def train_model(
         # ── 验证阶段 ──
         model.eval()
         va_loss = 0.0
-        with torch.no_grad():
-            for xb, yb in va_loader:
-                pred = model(xb)
-                va_loss += criterion(pred, yb).item() * xb.size(0)
+        for xb, yb in va_loader:
+            pred = model(xb)
+            va_loss += criterion(pred, yb).item() * xb.size(0)
         va_loss /= len(va_loader.dataset)
 
         scheduler.step(va_loss)
@@ -494,13 +493,12 @@ hnn, hist_hnn = train_model(hnn, Xhtn, Yhtn, Xhvn, Yhvn, model_name="HNN", epoch
 def eval_test_loss(model, X_te, Y_te, name):
     """计算测试集 MSE 和 RMSE。"""
     model.eval()
-    with torch.no_grad():
-        Xt = X_te.to(DEVICE)
-        Yt = Y_te.to(DEVICE)
-        pred = model(Xt)
-        mse = nn.MSELoss()(pred, Yt).item()
+    Xt = X_te.to(DEVICE)
+    Yt = Y_te.to(DEVICE)
+    pred = model(Xt)
+    mse = nn.MSELoss()(pred, Yt).item()
     # 反归一化后的 RMSE（物理单位）
-    pred_np = pred.cpu().numpy()
+    pred_np = pred.detach().cpu().numpy()
     true_np = Y_te.numpy()
     # 反归一化
     if name == "HNN":
@@ -543,27 +541,26 @@ def rollout_mdann_lnn(model, traj, norm_x, norm_y, n_steps=None, model_name=""):
     pred_q = [q.copy()]
     pred_dq = [dq.copy()]
 
-    with torch.no_grad():
-        for _ in range(n_steps):
-            state = np.array([theta, dtheta, q[0], q[1], dq[0], dq[1]], dtype=np.float32)
-            state_n = norm_x.transform(state[None, :])  # (1, 6)
-            inp = torch.tensor(state_n, device=DEVICE)
-            out_n = model(inp).cpu().numpy()[0]  # (3,)
-            acc = norm_y.inverse_transform(out_n[None, :])[0]  # (3,)
+    for _ in range(n_steps):
+        state = np.array([theta, dtheta, q[0], q[1], dq[0], dq[1]], dtype=np.float32)
+        state_n = norm_x.transform(state[None, :])  # (1, 6)
+        inp = torch.tensor(state_n, device=DEVICE)
+        out_n = model(inp).detach().cpu().numpy()[0]  # (3,)
+        acc = norm_y.inverse_transform(out_n[None, :])[0]  # (3,)
 
-            ddtheta = acc[0]
-            ddq = acc[1:]
+        ddtheta = acc[0]
+        ddq = acc[1:]
 
-            # 欧拉积分
-            theta += dtheta * dt
-            dtheta += ddtheta * dt
-            q += dq * dt
-            dq += ddq * dt
+        # 欧拉积分
+        theta += dtheta * dt
+        dtheta += ddtheta * dt
+        q += dq * dt
+        dq += ddq * dt
 
-            pred_theta.append(theta)
-            pred_dtheta.append(dtheta)
-            pred_q.append(q.copy())
-            pred_dq.append(dq.copy())
+        pred_theta.append(theta)
+        pred_dtheta.append(dtheta)
+        pred_q.append(q.copy())
+        pred_dq.append(dq.copy())
 
     return {
         "t": t[: n_steps + 1],
@@ -594,27 +591,26 @@ def rollout_hnn(model, traj, norm_xh, n_steps=None):
     pred_dtheta = [float(traj["dtheta"][0])]
     pred_dq = [traj["dq"][:, 0].copy()]
 
-    with torch.no_grad():
-        for _ in range(n_steps):
-            state = np.array([theta, q[0], q[1], p_th, p_q[0], p_q[1]], dtype=np.float32)
-            state_n = norm_xh.transform(state[None, :])
-            inp = torch.tensor(state_n, device=DEVICE)
-            out_n = model(inp).cpu().numpy()[0]  # (6,)
-            # 反归一化
-            out_phys = norm_xh.inverse_transform(out_n[None, :])[0]
-            dqdt = out_phys[:3]  # [dtheta, dq1, dq2]
-            dpdt = out_phys[3:]  # [dp_theta, dp_q1, dp_q2]
+    for _ in range(n_steps):
+        state = np.array([theta, q[0], q[1], p_th, p_q[0], p_q[1]], dtype=np.float32)
+        state_n = norm_xh.transform(state[None, :])
+        inp = torch.tensor(state_n, device=DEVICE)
+        out_n = model(inp).detach().cpu().numpy()[0]  # (6,)
+        # 反归一化
+        out_phys = norm_xh.inverse_transform(out_n[None, :])[0]
+        dqdt = out_phys[:3]  # [dtheta, dq1, dq2]
+        dpdt = out_phys[3:]  # [dp_theta, dp_q1, dp_q2]
 
-            # 辛欧拉积分（先更新 p，再更新 q，保辛结构）
-            p_th += dpdt[0] * dt
-            p_q += dpdt[1:] * dt
-            theta += dqdt[0] * dt
-            q += dqdt[1:] * dt
+        # 辛欧拉积分（先更新 p，再更新 q，保辛结构）
+        p_th += dpdt[0] * dt
+        p_q += dpdt[1:] * dt
+        theta += dqdt[0] * dt
+        q += dqdt[1:] * dt
 
-            pred_theta.append(theta)
-            pred_q.append(q.copy())
-            pred_dtheta.append(dqdt[0])
-            pred_dq.append(dqdt[1:].copy())
+        pred_theta.append(theta)
+        pred_q.append(q.copy())
+        pred_dtheta.append(dqdt[0])
+        pred_dq.append(dqdt[1:].copy())
 
     return {
         "t": t[: n_steps + 1],
